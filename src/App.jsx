@@ -138,6 +138,8 @@ export default function App() {
       return;
     }
     
+    
+
     const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
     const chefIndex = prompt(`Who is cooking?\n${chefOptions}\n\nEnter number:`);
     if (!chefIndex) return;
@@ -157,6 +159,13 @@ export default function App() {
       chef: chef.name,
       time
     }]);
+  };
+
+  const deleteDinner = async (dinnerId) => {
+    if (!confirm('Are you sure you want to delete this dinner?')) return;
+  
+    await supabase.from('dinners').delete().eq('id', dinnerId);
+    await loadData();
   };
 
   const addRequest = async () => {
@@ -306,7 +315,7 @@ export default function App() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {activeView === 'dashboard' && <DashboardView dinners={dinners} requests={requests} pantryItems={pantryItems} />}
-        {activeView === 'schedule' && <ScheduleView dinners={dinners} addDinner={addDinner} currentWeekStart={currentWeekStart} setCurrentWeekStart={setCurrentWeekStart} formatWeekRange={formatWeekRange} getWeekDates={getWeekDates} formatDateKey={formatDateKey} />}
+        {activeView === 'schedule' && <ScheduleView dinners={dinners} addDinner={addDinner} deleteDinner={deleteDinner} currentWeekStart={currentWeekStart} setCurrentWeekStart={setCurrentWeekStart} formatWeekRange={formatWeekRange} getWeekDates={getWeekDates} formatDateKey={formatDateKey} />}
         {activeView === 'requests' && <RequestsView requests={requests} requestTab={requestTab} setRequestTab={setRequestTab} addRequest={addRequest} scheduleRequest={scheduleRequest} />}
         {activeView === 'pantry' && <PantryView pantryItems={pantryItems} addPantryItem={addPantryItem} toggleLowStock={toggleLowStock} deletePantryItem={deletePantryItem} />}
         {activeView === 'family' && <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} deleteFamilyMember={deleteFamilyMember} />}
@@ -439,9 +448,16 @@ function ScheduleView({ dinners, addDinner, currentWeekStart, setCurrentWeekStar
                   <div className="text-xs text-gray-500 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                   <div className="text-2xl font-bold text-gray-900">{date.getDate()}</div>
                 </div>
-                
+            
                 {dayDinners.map(dinner => (
-                  <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow">
+                  <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow relative group">
+                    <button
+                      onClick={() => deleteDinner(dinner.id)}
+                      className="absolute top-1 right-1 p-1 text-amber-50 hover:bg-red-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete dinner"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                     <div className="text-sm font-semibold text-amber-50">{dinner.meal}</div>
                     <div className="text-xs text-orange-100">{dinner.chef}</div>
                     <div className="text-xs text-amber-200 font-medium">{dinner.time}</div>
