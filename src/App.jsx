@@ -340,6 +340,7 @@ export default function App() {
           <ScheduleView
             dinners={dinners}
             addDinner={addDinner}
+            deleteDinner={deleteDinner}
             currentWeekStart={currentWeekStart}
             setCurrentWeekStart={setCurrentWeekStart}
             formatWeekRange={formatWeekRange}
@@ -365,7 +366,11 @@ export default function App() {
           />
         )}
         {activeView === 'family' && (
-          <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} />
+          <FamilyView 
+            familyMembers={familyMembers} 
+            addFamilyMember={addFamilyMember}
+            deleteFamilyMember={deleteFamilyMember}
+          />
         )}
       </div>
     </div>
