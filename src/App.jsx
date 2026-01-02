@@ -103,32 +103,33 @@ export default function App() {
   };
 
   const addFamilyMember = async () => {
-  const name = prompt('Member name:');
-  if (!name) return;
-  const email = prompt('Email:');
-  if (!email) return;
-  const phone = prompt('Phone (optional):');
-  const preferences = prompt('Food preferences (optional):');
+    const name = prompt('Member name:');
+    if (!name) return;
+    const email = prompt('Email:');
+    if (!email) return;
+    const phone = prompt('Phone (optional):');
+    const preferences = prompt('Food preferences (optional):');
   
-  await supabase.from('family_members').insert([{
-    name,
-    email,
-    phone: phone || '',
-    preferences: preferences || '',
-    email_notifications: true
+    await supabase.from('family_members').insert([{
+      name,
+      email,
+      phone: phone || '',
+      preferences: preferences || '',
+      email_notifications: true
   }]);
   
-  // Manually reload data after adding
-  await loadData();
+    // Manually reload data after adding
+    await loadData();
+  };
 };
 
   const deleteFamilyMember = async (memberId) => {
-  if (!confirm('Are you sure you want to remove this family member?')) return;
-  
-  await supabase.from('family_members').delete().eq('id', memberId);
-  await loadData();
-};
+    if (!confirm('Are you sure you want to remove this family member?')) return;
 
+    await supabase.from('family_members').delete().eq('id', memberId);
+    await loadData();
+  };
+  
   const addDinner = async (date) => {
     const meal = prompt('What is for dinner?');
     if (!meal) return;
