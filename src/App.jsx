@@ -286,6 +286,9 @@ export default function App() {
       low_stock: false,
       source: isCostco ? 'costco' : 'other'
     }]);
+
+    // Manually reload data after adding
+    await loadData();
   };
 
   const toggleLowStock = async (itemId) => {
