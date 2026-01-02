@@ -126,22 +126,29 @@ export default function App() {
   };
 
   const deleteFamilyMember = async (memberId) => {
+    console.log('Delete clicked for member:', memberId);
+    console.log('Current family members:', familyMembers);
+  
     if (!confirm('Are you sure you want to remove this family member?')) return;
   
-    // Optimistically remove from UI immediately
-    setFamilyMembers(familyMembers.filter(member => member.id !== memberId));
+    console.log('Delete confirmed');
   
-    // Then delete from database in background
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('family_members')
       .delete()
       .eq('id', memberId);
   
+    console.log('Delete result:', { data, error });
+  
     if (error) {
       console.error('Error deleting member:', error);
       alert('Failed to delete family member');
-      await loadData(); // Reload to restore the member if delete failed
+      return;
     }
+  
+    console.log('Calling loadData...');
+    await loadData();
+    console.log('Family members after reload:', familyMembers);
   };
 
   const addDinner = async (date) => {
