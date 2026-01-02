@@ -122,6 +122,13 @@ export default function App() {
   await loadData();
 };
 
+  const deleteFamilyMember = async (memberId) => {
+  if (!confirm('Are you sure you want to remove this family member?')) return;
+  
+  await supabase.from('family_members').delete().eq('id', memberId);
+  await loadData();
+};
+
   const addDinner = async (date) => {
     const meal = prompt('What is for dinner?');
     if (!meal) return;
@@ -302,7 +309,7 @@ export default function App() {
         {activeView === 'schedule' && <ScheduleView dinners={dinners} addDinner={addDinner} currentWeekStart={currentWeekStart} setCurrentWeekStart={setCurrentWeekStart} formatWeekRange={formatWeekRange} getWeekDates={getWeekDates} formatDateKey={formatDateKey} />}
         {activeView === 'requests' && <RequestsView requests={requests} requestTab={requestTab} setRequestTab={setRequestTab} addRequest={addRequest} scheduleRequest={scheduleRequest} />}
         {activeView === 'pantry' && <PantryView pantryItems={pantryItems} addPantryItem={addPantryItem} toggleLowStock={toggleLowStock} deletePantryItem={deletePantryItem} />}
-        {activeView === 'family' && <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} />}
+        {activeView === 'family' && <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} deleteFamilyMember={deleteFamilyMember} />}
       </div>
     </div>
   );
@@ -710,3 +717,117 @@ function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryIt
     </div>
   </div>
 </div>
+);
+}
+
+// Family View Component
+function FamilyView({ familyMembers, addFamilyMember, deleteFamilyMember }) {
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Family Members</h1>
+          <p className="text-gray-600">{familyMembers.length} members - {familyMembers.filter(m => m.email_notifications).length} email notifications enabled</p>
+        </div>
+        <button
+          onClick={addFamilyMember}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Add Member
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-red-600 to-orange-700 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="w-6 h-6 text-amber-100" />
+            <span className="text-3xl font-bold text-amber-50">{familyMembers.length}</span>
+          </div>
+          <div className="text-sm text-orange-100">Total Members</div>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold text-amber-50">{familyMembers.filter(m => m.email_notifications).length}</span>
+          </div>
+          <div className="text-sm text-emerald-100">Email Alerts</div>
+        </div>
+        <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold text-amber-50">0</span>
+          </div>
+          <div className="text-sm text-orange-100">SMS Alerts</div>
+        </div>
+      </div>
+
+      {familyMembers.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center shadow">
+          <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No family members yet</h3>
+          <p className="text-gray-600 mb-4">Add your household members to start coordinating dinners</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          {familyMembers.map(member => (
+            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
+                  {member.name[0]}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
+                    <button
+                      onClick={() => deleteFamilyMember(member.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="Remove member"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {member.email_notifications && (
+                    <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full mb-2">
+                      Notifications on
+                    </span>
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>📧</span>
+                      <span>{member.email}</span>
+                    </div>
+                    {member.phone && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <span>📱</span>
+                        <span>{member.phone}</span>
+                      </div>
+                    )}
+                    {member.preferences && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">PREFERENCES</p>
+                        <p className="text-sm text-gray-700">{member.preferences}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div className="flex items-start gap-3">
+          <Lightbulb className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+          <div>
+            <h4 className="font-semibold text-blue-900 mb-2">About Notifications</h4>
+            <ul className="space-y-1 text-sm text-blue-800">
+              <li>Email notifications work right away - send dinner updates directly from the dashboard</li>
+              <li>SMS notifications require backend functions</li>
+              <li>Family members will receive updates about who is cooking and when dinner is ready</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
