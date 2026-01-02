@@ -1,4 +1,4 @@
-// src/App.jsx // Main Application Component for Kawamura Kitchen
+// Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
