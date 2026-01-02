@@ -190,6 +190,9 @@ export default function App() {
       chef: chef.name,
       time
     }]);
+
+    // Manually reload data after adding
+    await loadData();
   };
 
   const deleteDinner = async (dinnerId) => {
@@ -224,6 +227,9 @@ export default function App() {
       status: 'pending',
       votes: 0
     }]);
+
+    // Manually reload data after adding
+    await loadData();
   };
 
   const scheduleRequest = async (requestId) => {
