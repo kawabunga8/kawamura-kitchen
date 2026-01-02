@@ -26,8 +26,8 @@ export default function App() {
 
   useEffect(() => {
     loadData();
-    
-    // Set up real-time subscriptions
+
+    // Realtime subscriptions
     const membersSubscription = supabase
       .channel('family_members_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'family_members' }, () => {
@@ -57,11 +57,13 @@ export default function App() {
       .subscribe();
 
     return () => {
+      // removeChannel expects the channel object
       supabase.removeChannel(membersSubscription);
       supabase.removeChannel(dinnersSubscription);
       supabase.removeChannel(requestsSubscription);
       supabase.removeChannel(pantrySubscription);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
@@ -74,10 +76,10 @@ export default function App() {
         supabase.from('pantry_items').select('*').order('name')
       ]);
 
-      if (membersRes.data) setFamilyMembers(membersRes.data);
-      if (dinnersRes.data) setDinners(dinnersRes.data);
-      if (requestsRes.data) setRequests(requestsRes.data);
-      if (pantryRes.data) setPantryItems(pantryRes.data);
+      if (!membersRes.error && membersRes.data) setFamilyMembers(membersRes.data);
+      if (!dinnersRes.error && dinnersRes.data) setDinners(dinnersRes.data);
+      if (!requestsRes.error && requestsRes.data) setRequests(requestsRes.data);
+      if (!pantryRes.error && pantryRes.data) setPantryItems(pantryRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -95,7 +97,7 @@ export default function App() {
   };
 
   const formatDateKey = (date) => date.toISOString().split('T')[0];
-  
+
   const formatWeekRange = () => {
     const weekDates = getWeekDates();
     const start = weekDates[0];
@@ -110,7 +112,7 @@ export default function App() {
     if (!email) return;
     const phone = prompt('Phone (optional):');
     const preferences = prompt('Food preferences (optional):');
-  
+
     await supabase.from('family_members').insert([{
       name,
       email,
@@ -133,27 +135,25 @@ export default function App() {
   const addDinner = async (date) => {
     const meal = prompt('What is for dinner?');
     if (!meal) return;
-    
+
     if (familyMembers.length === 0) {
       alert('Please add family members first!');
       return;
     }
-    
-    
 
     const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
     const chefIndex = prompt(`Who is cooking?\n${chefOptions}\n\nEnter number:`);
     if (!chefIndex) return;
-    
+
     const chef = familyMembers[parseInt(chefIndex) - 1];
     if (!chef) {
       alert('Invalid selection');
       return;
     }
-    
+
     const time = prompt('What time? (e.g., 18:00)', '18:00');
     if (!time) return;
-    
+
     await supabase.from('dinners').insert([{
       date: formatDateKey(date),
       meal,
@@ -172,22 +172,22 @@ export default function App() {
   const addRequest = async () => {
     const meal = prompt('What meal would you like?');
     if (!meal) return;
-    
+
     if (familyMembers.length === 0) {
       alert('Please add family members first!');
       return;
     }
-    
+
     const requestorOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
     const requestorIndex = prompt(`Who is requesting?\n${requestorOptions}\n\nEnter number:`);
     if (!requestorIndex) return;
-    
+
     const requestor = familyMembers[parseInt(requestorIndex) - 1];
     if (!requestor) {
       alert('Invalid selection');
       return;
     }
-    
+
     await supabase.from('requests').insert([{
       meal,
       requested_by: requestor.name,
@@ -206,7 +206,7 @@ export default function App() {
     const quantity = prompt('Quantity:');
     if (!quantity) return;
     const isCostco = confirm('Is this from Costco?');
-    
+
     await supabase.from('pantry_items').insert([{
       name,
       quantity,
@@ -217,6 +217,7 @@ export default function App() {
 
   const toggleLowStock = async (itemId) => {
     const item = pantryItems.find(i => i.id === itemId);
+    if (!item) return;
     await supabase.from('pantry_items').update({ low_stock: !item.low_stock }).eq('id', itemId);
   };
 
@@ -252,7 +253,7 @@ export default function App() {
             </div>
           </div>
         </div>
-        
+
         <nav className="flex-1 p-4">
           <button
             onClick={() => setActiveView('dashboard')}
@@ -263,7 +264,7 @@ export default function App() {
             <Home className="w-5 h-5" />
             <span className="font-medium">Dashboard</span>
           </button>
-          
+
           <button
             onClick={() => setActiveView('schedule')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
@@ -273,7 +274,7 @@ export default function App() {
             <Calendar className="w-5 h-5" />
             <span className="font-medium">Schedule</span>
           </button>
-          
+
           <button
             onClick={() => setActiveView('requests')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
@@ -283,7 +284,7 @@ export default function App() {
             <Lightbulb className="w-5 h-5" />
             <span className="font-medium">Requests</span>
           </button>
-          
+
           <button
             onClick={() => setActiveView('pantry')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
@@ -293,7 +294,7 @@ export default function App() {
             <Package className="w-5 h-5" />
             <span className="font-medium">Pantry</span>
           </button>
-          
+
           <button
             onClick={() => setActiveView('family')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
@@ -316,10 +317,37 @@ export default function App() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {activeView === 'dashboard' && <DashboardView dinners={dinners} requests={requests} pantryItems={pantryItems} />}
-        {activeView === 'schedule' && <ScheduleView dinners={dinners} addDinner={addDinner} deleteDinner={deleteDinner} currentWeekStart={currentWeekStart} setCurrentWeekStart={setCurrentWeekStart} formatWeekRange={formatWeekRange} getWeekDates={getWeekDates} formatDateKey={formatDateKey} />}
-        {activeView === 'requests' && <RequestsView requests={requests} requestTab={requestTab} setRequestTab={setRequestTab} addRequest={addRequest} scheduleRequest={scheduleRequest} />}
-        {activeView === 'pantry' && <PantryView pantryItems={pantryItems} addPantryItem={addPantryItem} toggleLowStock={toggleLowStock} deletePantryItem={deletePantryItem} />}
-        {activeView === 'family' && <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} deleteFamilyMember={deleteFamilyMember} />}
+        {activeView === 'schedule' && (
+          <ScheduleView
+            dinners={dinners}
+            addDinner={addDinner}
+            currentWeekStart={currentWeekStart}
+            setCurrentWeekStart={setCurrentWeekStart}
+            formatWeekRange={formatWeekRange}
+            getWeekDates={getWeekDates}
+            formatDateKey={formatDateKey}
+          />
+        )}
+        {activeView === 'requests' && (
+          <RequestsView
+            requests={requests}
+            requestTab={requestTab}
+            setRequestTab={setRequestTab}
+            addRequest={addRequest}
+            scheduleRequest={scheduleRequest}
+          />
+        )}
+        {activeView === 'pantry' && (
+          <PantryView
+            pantryItems={pantryItems}
+            addPantryItem={addPantryItem}
+            toggleLowStock={toggleLowStock}
+            deletePantryItem={deletePantryItem}
+          />
+        )}
+        {activeView === 'family' && (
+          <FamilyView familyMembers={familyMembers} addFamilyMember={addFamilyMember} />
+        )}
       </div>
     </div>
   );
@@ -406,7 +434,7 @@ function ScheduleView({
   formatDateKey 
 }) {
   const weekDates = getWeekDates();
-  
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -462,7 +490,7 @@ function ScheduleView({
                   <div className="text-xs text-gray-500 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                   <div className="text-2xl font-bold text-gray-900">{date.getDate()}</div>
                 </div>
-            
+
                 {dayDinners.map(dinner => (
                   <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow relative group">
                     <button
@@ -602,7 +630,7 @@ function PantryView({
 }) {
   const costcoItems = pantryItems.filter(item => item.source === 'costco');
   const otherItems = pantryItems.filter(item => item.source === 'other');
-  
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -632,15 +660,10 @@ function PantryView({
           ) : (
             <div className="grid grid-cols-3 gap-4">
               {costcoItems.map(item => (
-                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${
-                  item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'
-                }`}>
+                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <button
-                      onClick={() => deletePantryItem(item.id)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
+                    <button onClick={() => deletePantryItem(item.id)} className="text-gray-400 hover:text-red-500">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -674,9 +697,7 @@ function PantryView({
           ) : (
             <div className="grid grid-cols-3 gap-4">
               {otherItems.map(item => (
-                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${
-                  item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'
-                }`}>
+                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-semibold text-gray-900">{item.name}</h4>
                     <button
@@ -706,6 +727,7 @@ function PantryView({
     </div>
   );
 }
+
 // Family View Component
 function FamilyView({ 
   familyMembers, 
@@ -716,8 +738,8 @@ function FamilyView({
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Family Members</h1>
-          <p className="text-gray-600">{familyMembers.length} members - {familyMembers.filter(m => m.email_notifications).length} email notifications enabled</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Family</h1>
+          <p className="text-gray-600">Manage household members</p>
         </div>
         <button
           onClick={addFamilyMember}
@@ -762,7 +784,7 @@ function FamilyView({
             <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6 transition-transform hover:-translate-y-1 hover:shadow-xl">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
-                  {member.name[0]}
+                  {member.name ? member.name[0] : '?'}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-1">
