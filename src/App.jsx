@@ -724,7 +724,7 @@ function FamilyView({ familyMembers, addFamilyMember, deleteFamilyMember }) {
                     <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
                     <button
                       onClick={() => deleteFamilyMember(member.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors -mt-2 -mr-2"
                       title="Remove member"
                     >
                       <X className="w-5 h-5" />
