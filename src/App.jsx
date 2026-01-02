@@ -127,8 +127,18 @@ export default function App() {
 
   const deleteFamilyMember = async (memberId) => {
     if (!confirm('Are you sure you want to remove this family member?')) return;
-
-    await supabase.from('family_members').delete().eq('id', memberId);
+  
+    const { error } = await supabase
+      .from('family_members')
+      .delete()
+      .eq('id', memberId);
+  
+    if (error) {
+      console.error('Error deleting member:', error);
+      alert('Failed to delete family member');
+      return;
+    }
+  
     await loadData();
   };
 
