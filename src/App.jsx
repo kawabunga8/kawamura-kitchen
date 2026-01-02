@@ -683,7 +683,7 @@ function PantryView({
                       onClick={() => deletePantryItem(item.id)}
                       className="text-gray-400 hover:text-red-500"
                     >
-                      <X className="w-4 h-4" />
+                      <W className="w-4 h-4" />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
