@@ -391,7 +391,16 @@ function DashboardView({ dinners, requests, pantryItems }) {
 }
 
 // Schedule View Component  
-function ScheduleView({ dinners, addDinner, currentWeekStart, setCurrentWeekStart, formatWeekRange, getWeekDates, formatDateKey }) {
+function ScheduleView({ 
+  dinners, 
+  addDinner,
+  deleteDinner,
+  currentWeekStart, 
+  setCurrentWeekStart, 
+  formatWeekRange, 
+  getWeekDates, 
+  formatDateKey 
+}) {
   const weekDates = getWeekDates();
   
   return (
