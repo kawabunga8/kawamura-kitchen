@@ -1,6 +1,6 @@
 // Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X } from 'lucide-react';
+import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -219,6 +219,13 @@ export default function App() {
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
   };
 
+  const voteOnRequest = async (requestId) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return;
+
+    await supabase.from('requests').update({ votes: request.votes + 1 }).eq('id', requestId);
+  };
+
   const addPantryItem = async () => {
     const name = prompt('Item name:');
     if (!name) return;
@@ -355,6 +362,7 @@ export default function App() {
             setRequestTab={setRequestTab}
             addRequest={addRequest}
             scheduleRequest={scheduleRequest}
+            voteOnRequest={voteOnRequest}
           />
         )}
         {activeView === 'pantry' && (
@@ -546,12 +554,13 @@ function ScheduleView({
 }
 
 // Requests View Component
-function RequestsView({ 
-  requests, 
-  requestTab, 
-  setRequestTab, 
-  addRequest, 
-  scheduleRequest 
+function RequestsView({
+  requests,
+  requestTab,
+  setRequestTab,
+  addRequest,
+  scheduleRequest,
+  voteOnRequest
 }) {
   const filteredRequests = requests.filter(r => {
     if (requestTab === 'pending') return r.status === 'pending';
@@ -619,20 +628,34 @@ function RequestsView({
           ) : (
             <div className="space-y-3">
               {filteredRequests.map(request => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{request.meal}</h4>
                     <p className="text-sm text-gray-600">Requested by {request.requested_by}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">{request.votes} votes</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => voteOnRequest(request.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow"
+                        title="Vote for this meal"
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                        <span className="font-semibold">{request.votes}</span>
+                      </button>
+                    </div>
                     {request.status === 'pending' && (
                       <button
                         onClick={() => scheduleRequest(request.id)}
-                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                        className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all shadow text-sm font-medium"
                       >
                         Schedule
                       </button>
+                    )}
+                    {request.status === 'scheduled' && (
+                      <span className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium">
+                        Scheduled
+                      </span>
                     )}
                   </div>
                 </div>
@@ -728,7 +751,7 @@ function PantryView({
                       onClick={() => deletePantryItem(item.id)}
                       className="text-gray-400 hover:text-red-500"
                     >
-                      <W className="w-4 h-4" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
