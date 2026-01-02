@@ -276,7 +276,9 @@ export default function App() {
     if (!name) return;
     const quantity = prompt('Quantity:');
     if (!quantity) return;
-    const isCostco = confirm('Is this from Costco?');
+
+    const source = prompt('Where is this from?\n1. Other (default)\n2. Costco\n\nEnter number (or press Enter for Other):');
+    const isCostco = source === '2';
 
     await supabase.from('pantry_items').insert([{
       name,
