@@ -1,3 +1,4 @@
+// Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
@@ -118,7 +119,17 @@ export default function App() {
       phone: phone || '',
       preferences: preferences || '',
       email_notifications: true
-    }]);
+  }]);
+  
+    // Manually reload data after adding
+    await loadData();
+  };
+
+  const deleteFamilyMember = async (memberId) => {
+    if (!confirm('Are you sure you want to remove this family member?')) return;
+
+    await supabase.from('family_members').delete().eq('id', memberId);
+    await loadData();
   };
 
   const addDinner = async (date) => {
@@ -149,6 +160,13 @@ export default function App() {
       chef: chef.name,
       time
     }]);
+  };
+
+  const deleteDinner = async (dinnerId) => {
+    if (!confirm('Are you sure you want to delete this dinner?')) return;
+  
+    await supabase.from('dinners').delete().eq('id', dinnerId);
+    await loadData();
   };
 
   const addRequest = async () => {
@@ -336,7 +354,11 @@ export default function App() {
 }
 
 // Dashboard View Component
-function DashboardView({ dinners, requests, pantryItems }) {
+function DashboardView({ 
+  dinners, 
+  requests, 
+  pantryItems 
+}) {
   const upcomingDinners = dinners.filter(d => new Date(d.date) >= new Date()).slice(0, 3);
   const lowStockItems = pantryItems.filter(item => item.low_stock);
 
@@ -400,8 +422,17 @@ function DashboardView({ dinners, requests, pantryItems }) {
   );
 }
 
-// Schedule View Component
-function ScheduleView({ dinners, addDinner, currentWeekStart, setCurrentWeekStart, formatWeekRange, getWeekDates, formatDateKey }) {
+// Schedule View Component  
+function ScheduleView({ 
+  dinners, 
+  addDinner,
+  deleteDinner,
+  currentWeekStart, 
+  setCurrentWeekStart, 
+  formatWeekRange, 
+  getWeekDates, 
+  formatDateKey 
+}) {
   const weekDates = getWeekDates();
 
   return (
@@ -461,7 +492,14 @@ function ScheduleView({ dinners, addDinner, currentWeekStart, setCurrentWeekStar
                 </div>
 
                 {dayDinners.map(dinner => (
-                  <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow">
+                  <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow relative group">
+                    <button
+                      onClick={() => deleteDinner(dinner.id)}
+                      className="absolute top-1 right-1 p-1 text-amber-50 hover:bg-red-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete dinner"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                     <div className="text-sm font-semibold text-amber-50">{dinner.meal}</div>
                     <div className="text-xs text-orange-100">{dinner.chef}</div>
                     <div className="text-xs text-amber-200 font-medium">{dinner.time}</div>
@@ -484,7 +522,13 @@ function ScheduleView({ dinners, addDinner, currentWeekStart, setCurrentWeekStar
 }
 
 // Requests View Component
-function RequestsView({ requests, requestTab, setRequestTab, addRequest, scheduleRequest }) {
+function RequestsView({ 
+  requests, 
+  requestTab, 
+  setRequestTab, 
+  addRequest, 
+  scheduleRequest 
+}) {
   const filteredRequests = requests.filter(r => {
     if (requestTab === 'pending') return r.status === 'pending';
     if (requestTab === 'scheduled') return r.status === 'scheduled';
@@ -578,7 +622,12 @@ function RequestsView({ requests, requestTab, setRequestTab, addRequest, schedul
 }
 
 // Pantry View Component
-function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryItem }) {
+function PantryView({ 
+  pantryItems, 
+  addPantryItem, 
+  toggleLowStock, 
+  deletePantryItem 
+}) {
   const costcoItems = pantryItems.filter(item => item.source === 'costco');
   const otherItems = pantryItems.filter(item => item.source === 'other');
 
@@ -651,8 +700,11 @@ function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryIt
                 <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <button onClick={() => deletePantryItem(item.id)} className="text-gray-400 hover:text-red-500">
-                      <X className="w-4 h-4" />
+                    <button
+                      onClick={() => deletePantryItem(item.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <W className="w-4 h-4" />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
@@ -677,7 +729,11 @@ function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryIt
 }
 
 // Family View Component
-function FamilyView({ familyMembers, addFamilyMember }) {
+function FamilyView({ 
+  familyMembers, 
+  addFamilyMember, 
+  deleteFamilyMember 
+}) {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -725,13 +781,22 @@ function FamilyView({ familyMembers, addFamilyMember }) {
       ) : (
         <div className="grid grid-cols-2 gap-6 mb-8">
           {familyMembers.map(member => (
-            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6">
+            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6 transition-transform hover:-translate-y-1 hover:shadow-xl">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
                   {member.name ? member.name[0] : '?'}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
+                    <button
+                      onClick={() => deleteFamilyMember(member.id)}
+                      className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors -mt-2 -mr-2"
+                      title="Remove member"
+                    >
+                      <X className="w-4 h-4"  />
+                    </button>
+                  </div>
                   {member.email_notifications && (
                     <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full mb-2">
                       Notifications on
