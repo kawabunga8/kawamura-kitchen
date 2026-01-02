@@ -14,6 +14,7 @@ export default function App() {
   const [dinners, setDinners] = useState([]);
   const [requests, setRequests] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
+  const [votes, setVotes] = useState([]);
   const [requestTab, setRequestTab] = useState('pending');
   const [loading, setLoading] = useState(true);
 
@@ -56,12 +57,20 @@ export default function App() {
       })
       .subscribe();
 
+    const votesSubscription = supabase
+      .channel('votes_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => {
+        loadData();
+      })
+      .subscribe();
+
     return () => {
       // removeChannel expects the channel object
       supabase.removeChannel(membersSubscription);
       supabase.removeChannel(dinnersSubscription);
       supabase.removeChannel(requestsSubscription);
       supabase.removeChannel(pantrySubscription);
+      supabase.removeChannel(votesSubscription);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -69,17 +78,19 @@ export default function App() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [membersRes, dinnersRes, requestsRes, pantryRes] = await Promise.all([
+      const [membersRes, dinnersRes, requestsRes, pantryRes, votesRes] = await Promise.all([
         supabase.from('family_members').select('*').order('id'),
         supabase.from('dinners').select('*').order('date'),
         supabase.from('requests').select('*').order('created_at', { ascending: false }),
-        supabase.from('pantry_items').select('*').order('name')
+        supabase.from('pantry_items').select('*').order('name'),
+        supabase.from('votes').select('*')
       ]);
 
       if (!membersRes.error && membersRes.data) setFamilyMembers(membersRes.data);
       if (!dinnersRes.error && dinnersRes.data) setDinners(dinnersRes.data);
       if (!requestsRes.error && requestsRes.data) setRequests(requestsRes.data);
       if (!pantryRes.error && pantryRes.data) setPantryItems(pantryRes.data);
+      if (!votesRes.error && votesRes.data) setVotes(votesRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -220,10 +231,44 @@ export default function App() {
   };
 
   const voteOnRequest = async (requestId) => {
-    const request = requests.find(r => r.id === requestId);
-    if (!request) return;
+    if (familyMembers.length === 0) {
+      alert('Please add family members first!');
+      return;
+    }
 
-    await supabase.from('requests').update({ votes: request.votes + 1 }).eq('id', requestId);
+    // Ask who is voting
+    const voterOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+    const voterIndex = prompt(`Who is voting?\n${voterOptions}\n\nEnter number:`);
+    if (!voterIndex) return;
+
+    const voter = familyMembers[parseInt(voterIndex) - 1];
+    if (!voter) {
+      alert('Invalid selection');
+      return;
+    }
+
+    // Check if this person already voted
+    const existingVote = votes.find(v => v.request_id === requestId && v.voter_name === voter.name);
+    if (existingVote) {
+      alert(`${voter.name} has already voted for this meal!`);
+      return;
+    }
+
+    // Add the vote
+    const { error: voteError } = await supabase.from('votes').insert([{
+      request_id: requestId,
+      voter_name: voter.name
+    }]);
+
+    if (voteError) {
+      console.error('Error adding vote:', voteError);
+      alert('Failed to add vote');
+      return;
+    }
+
+    // Update the vote count on the request
+    const currentVotes = votes.filter(v => v.request_id === requestId).length + 1;
+    await supabase.from('requests').update({ votes: currentVotes }).eq('id', requestId);
   };
 
   const addPantryItem = async () => {
@@ -358,6 +403,7 @@ export default function App() {
         {activeView === 'requests' && (
           <RequestsView
             requests={requests}
+            votes={votes}
             requestTab={requestTab}
             setRequestTab={setRequestTab}
             addRequest={addRequest}
@@ -556,6 +602,7 @@ function ScheduleView({
 // Requests View Component
 function RequestsView({
   requests,
+  votes,
   requestTab,
   setRequestTab,
   addRequest,
@@ -567,6 +614,10 @@ function RequestsView({
     if (requestTab === 'scheduled') return r.status === 'scheduled';
     return true;
   });
+
+  const getVotersForRequest = (requestId) => {
+    return votes.filter(v => v.request_id === requestId);
+  };
 
   return (
     <div className="p-8">
@@ -627,39 +678,57 @@ function RequestsView({
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredRequests.map(request => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{request.meal}</h4>
-                    <p className="text-sm text-gray-600">Requested by {request.requested_by}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => voteOnRequest(request.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow"
-                        title="Vote for this meal"
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                        <span className="font-semibold">{request.votes}</span>
-                      </button>
+              {filteredRequests.map(request => {
+                const requestVoters = getVotersForRequest(request.id);
+                return (
+                  <div key={request.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">{request.meal}</h4>
+                        <p className="text-sm text-gray-600">Requested by {request.requested_by}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => voteOnRequest(request.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow"
+                            title="Vote for this meal"
+                          >
+                            <ThumbsUp className="w-4 h-4" />
+                            <span className="font-semibold">{request.votes}</span>
+                          </button>
+                        </div>
+                        {request.status === 'pending' && (
+                          <button
+                            onClick={() => scheduleRequest(request.id)}
+                            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all shadow text-sm font-medium"
+                          >
+                            Schedule
+                          </button>
+                        )}
+                        {request.status === 'scheduled' && (
+                          <span className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium">
+                            Scheduled
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {request.status === 'pending' && (
-                      <button
-                        onClick={() => scheduleRequest(request.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all shadow text-sm font-medium"
-                      >
-                        Schedule
-                      </button>
-                    )}
-                    {request.status === 'scheduled' && (
-                      <span className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium">
-                        Scheduled
-                      </span>
+                    {requestVoters.length > 0 && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                        <span className="text-xs text-gray-500 font-medium">Voted by:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {requestVoters.map(vote => (
+                            <span key={vote.id} className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+                              <ThumbsUp className="w-3 h-3" />
+                              {vote.voter_name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
