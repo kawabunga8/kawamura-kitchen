@@ -490,7 +490,13 @@ function ScheduleView({
 }
 
 // Requests View Component
-function RequestsView({ requests, requestTab, setRequestTab, addRequest, scheduleRequest }) {
+function RequestsView({ 
+  requests, 
+  requestTab, 
+  setRequestTab, 
+  addRequest, 
+  scheduleRequest 
+}) {
   const filteredRequests = requests.filter(r => {
     if (requestTab === 'pending') return r.status === 'pending';
     if (requestTab === 'scheduled') return r.status === 'scheduled';
@@ -584,7 +590,12 @@ function RequestsView({ requests, requestTab, setRequestTab, addRequest, schedul
 }
 
 // Pantry View Component
-function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryItem }) {
+function PantryView({ 
+  pantryItems, 
+  addPantryItem, 
+  toggleLowStock, 
+  deletePantryItem 
+}) {
   const costcoItems = pantryItems.filter(item => item.source === 'costco');
   const otherItems = pantryItems.filter(item => item.source === 'other');
   
@@ -692,7 +703,11 @@ function PantryView({ pantryItems, addPantryItem, toggleLowStock, deletePantryIt
   );
 }
 // Family View Component
-function FamilyView({ familyMembers, addFamilyMember, deleteFamilyMember }) {
+function FamilyView({ 
+  familyMembers, 
+  addFamilyMember, 
+  deleteFamilyMember 
+}) {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -740,7 +755,7 @@ function FamilyView({ familyMembers, addFamilyMember, deleteFamilyMember }) {
       ) : (
         <div className="grid grid-cols-2 gap-6 mb-8">
           {familyMembers.map(member => (
-            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6">
+            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6 transition-transform hover:-translate-y-1 hover:shadow-xl">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
                   {member.name[0]}
