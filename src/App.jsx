@@ -103,21 +103,24 @@ export default function App() {
   };
 
   const addFamilyMember = async () => {
-    const name = prompt('Member name:');
-    if (!name) return;
-    const email = prompt('Email:');
-    if (!email) return;
-    const phone = prompt('Phone (optional):');
-    const preferences = prompt('Food preferences (optional):');
-    
-    await supabase.from('family_members').insert([{
-      name,
-      email,
-      phone: phone || '',
-      preferences: preferences || '',
-      email_notifications: true
-    }]);
-  };
+  const name = prompt('Member name:');
+  if (!name) return;
+  const email = prompt('Email:');
+  if (!email) return;
+  const phone = prompt('Phone (optional):');
+  const preferences = prompt('Food preferences (optional):');
+  
+  await supabase.from('family_members').insert([{
+    name,
+    email,
+    phone: phone || '',
+    preferences: preferences || '',
+    email_notifications: true
+  }]);
+  
+  // Manually reload data after adding
+  await loadData();
+};
 
   const addDinner = async (date) => {
     const meal = prompt('What is for dinner?');
