@@ -326,7 +326,11 @@ export default function App() {
 }
 
 // Dashboard View Component
-function DashboardView({ dinners, requests, pantryItems }) {
+function DashboardView({ 
+  dinners, 
+  requests, 
+  pantryItems 
+}) {
   const upcomingDinners = dinners.filter(d => new Date(d.date) >= new Date()).slice(0, 3);
   const lowStockItems = pantryItems.filter(item => item.low_stock);
 
@@ -768,7 +772,7 @@ function FamilyView({
                       className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors -mt-2 -mr-2"
                       title="Remove member"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4"  />
                     </button>
                   </div>
                   {member.email_notifications && (
