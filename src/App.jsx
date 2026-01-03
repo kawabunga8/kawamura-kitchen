@@ -238,16 +238,14 @@ export default function App() {
       chef: chef.name,
       time
     }]);
-
-    // Reload only dinners
-    await loadDinners();
+    // Real-time subscription will update automatically
   };
 
   const deleteDinner = async (dinnerId) => {
     if (!confirm('Are you sure you want to delete this dinner?')) return;
 
     await supabase.from('dinners').delete().eq('id', dinnerId);
-    await loadDinners();
+    // Real-time subscription will update automatically
   };
 
   const addRequest = async () => {
@@ -275,9 +273,7 @@ export default function App() {
       status: 'pending',
       votes: 0
     }]);
-
-    // Reload only requests
-    await loadRequests();
+    // Real-time subscription will update automatically
   };
 
   const scheduleRequest = async (requestId) => {
@@ -325,9 +321,7 @@ export default function App() {
 
     // Mark request as scheduled
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
-
-    // Reload dinners and requests
-    await Promise.all([loadDinners(), loadRequests()]);
+    // Real-time subscriptions will update both dinners and requests automatically
   };
 
   const deleteRequest = async (requestId) => {
@@ -343,8 +337,7 @@ export default function App() {
       if (!confirm('Are you sure you want to delete this request?')) return;
       await supabase.from('requests').delete().eq('id', requestId);
     }
-
-    await loadRequests();
+    // Real-time subscription will update automatically
   };
 
   const voteOnRequest = async (requestId) => {
@@ -403,20 +396,19 @@ export default function App() {
       low_stock: false,
       source: isCostco ? 'costco' : 'other'
     }]);
-
-    // Reload only pantry items
-    await loadPantryItems();
+    // Real-time subscription will update automatically
   };
 
   const toggleLowStock = async (itemId) => {
     const item = pantryItems.find(i => i.id === itemId);
     if (!item) return;
     await supabase.from('pantry_items').update({ low_stock: !item.low_stock }).eq('id', itemId);
+    // Real-time subscription will update automatically
   };
 
   const deletePantryItem = async (itemId) => {
     await supabase.from('pantry_items').delete().eq('id', itemId);
-    await loadPantryItems();
+    // Real-time subscription will update automatically
   };
 
   // Show login screen if not authenticated
