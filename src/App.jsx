@@ -399,7 +399,13 @@ export default function App() {
 
     if (error) {
       console.error('Error adding pantry item:', error);
-      alert('Failed to add item: ' + error.message);
+
+      // Handle unique constraint violation (409 Conflict)
+      if (error.code === '23505') {
+        alert(`An item named "${name}" already exists in ${isCostco ? 'Costco' : 'Other'} section.\n\nPlease:\n1. Use a different name (e.g., "${name} 2")\n2. Or update the existing item's quantity instead`);
+      } else {
+        alert('Failed to add item: ' + error.message);
+      }
       return;
     }
 
