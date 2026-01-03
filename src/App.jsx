@@ -208,26 +208,18 @@ export default function App() {
       phone: phone || '',
       preferences: preferences || '',
       email_notifications: true
-  }]);
-  
-    // Manually reload data after adding
-    await loadData();
+    }]);
+
+    // Real-time subscription will update automatically
   };
 
   const deleteFamilyMember = async (memberId) => {
-    console.log('Delete clicked for member:', memberId);
-    console.log('Current family members:', familyMembers);
-
     if (!confirm('Are you sure you want to remove this family member?')) return;
 
-    console.log('Delete confirmed');
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('family_members')
       .delete()
       .eq('id', memberId);
-
-    console.log('Delete result:', { data, error });
 
     if (error) {
       console.error('Error deleting member:', error);
@@ -235,9 +227,7 @@ export default function App() {
       return;
     }
 
-    console.log('Calling loadData...');
-    await loadData();
-    console.log('Family members after reload:', familyMembers);
+    // Real-time subscription will update automatically
   };
 
   // Email notification helper
