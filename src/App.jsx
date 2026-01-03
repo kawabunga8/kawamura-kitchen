@@ -59,39 +59,41 @@ export default function App() {
 
     loadData();
 
-    // Realtime subscriptions
+    // Realtime subscriptions - only reload changed data
     const membersSubscription = supabase
       .channel('family_members_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'family_members' }, () => {
-        loadData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'family_members' }, async () => {
+        const { data } = await supabase.from('family_members').select('*').order('id');
+        if (data) setFamilyMembers(data);
       })
       .subscribe();
 
     const dinnersSubscription = supabase
       .channel('dinners_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'dinners' }, () => {
-        loadData();
+        loadDinners();
       })
       .subscribe();
 
     const requestsSubscription = supabase
       .channel('requests_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, () => {
-        loadData();
+        loadRequests();
       })
       .subscribe();
 
     const pantrySubscription = supabase
       .channel('pantry_items_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pantry_items' }, () => {
-        loadData();
+        loadPantryItems();
       })
       .subscribe();
 
     const votesSubscription = supabase
       .channel('votes_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => {
-        loadData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => {
+        const { data } = await supabase.from('votes').select('*');
+        if (data) setVotes(data);
       })
       .subscribe();
 
