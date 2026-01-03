@@ -390,12 +390,20 @@ export default function App() {
     const source = prompt('Where is this from?\n1. Other (default)\n2. Costco\n\nEnter number (or press Enter for Other):');
     const isCostco = source === '2';
 
-    await supabase.from('pantry_items').insert([{
+    const { data, error } = await supabase.from('pantry_items').insert([{
       name,
       quantity,
       low_stock: false,
       source: isCostco ? 'costco' : 'other'
-    }]);
+    }]).select();
+
+    if (error) {
+      console.error('Error adding pantry item:', error);
+      alert('Failed to add item: ' + error.message);
+      return;
+    }
+
+    console.log('Successfully added pantry item:', data);
     // Real-time subscription will update automatically
   };
 
