@@ -233,7 +233,53 @@ export default function App() {
   };
 
   const scheduleRequest = async (requestId) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return;
+
+    if (familyMembers.length === 0) {
+      alert('Please add family members first!');
+      return;
+    }
+
+    // Ask for the date
+    const dateInput = prompt('What date? (YYYY-MM-DD, e.g., 2026-01-15)');
+    if (!dateInput) return;
+
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateInput)) {
+      alert('Invalid date format. Please use YYYY-MM-DD');
+      return;
+    }
+
+    // Ask who will cook
+    const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+    const chefIndex = prompt(`Who will cook ${request.meal}?\n${chefOptions}\n\nEnter number:`);
+    if (!chefIndex) return;
+
+    const chef = familyMembers[parseInt(chefIndex) - 1];
+    if (!chef) {
+      alert('Invalid selection');
+      return;
+    }
+
+    // Ask for time
+    const time = prompt('What time? (e.g., 18:00)', '18:00');
+    if (!time) return;
+
+    // Add to dinner schedule
+    await supabase.from('dinners').insert([{
+      date: dateInput,
+      meal: request.meal,
+      chef: chef.name,
+      time
+    }]);
+
+    // Mark request as scheduled
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
+
+    // Reload data to show the new dinner
+    await loadData();
   };
 
   const voteOnRequest = async (requestId) => {
