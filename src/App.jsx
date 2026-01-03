@@ -676,8 +676,8 @@ function DashboardView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Dinners</h3>
           {upcomingDinners.length === 0 ? (
             <p className="text-gray-400 text-sm">No upcoming dinners scheduled</p>
@@ -745,44 +745,45 @@ function ScheduleView({
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 shadow">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <button
             onClick={() => {
               const newStart = new Date(currentWeekStart);
               newStart.setDate(newStart.getDate() - 7);
               setCurrentWeekStart(newStart);
             }}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-3 md:px-4 py-2 text-sm md:text-base text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            Previous
+            Prev
           </button>
-          <div className="text-lg font-semibold text-gray-900">{formatWeekRange()}</div>
+          <div className="text-sm md:text-lg font-semibold text-gray-900">{formatWeekRange()}</div>
           <button
             onClick={() => {
               const newStart = new Date(currentWeekStart);
               newStart.setDate(newStart.getDate() + 7);
               setCurrentWeekStart(newStart);
             }}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-3 md:px-4 py-2 text-sm md:text-base text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             Next
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-4">
+        <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+          <div className="grid grid-cols-7 gap-2 md:gap-4 min-w-max md:min-w-0">
           {weekDates.map(date => {
             const dateKey = formatDateKey(date);
             const dayDinners = dinners.filter(d => d.date === dateKey);
             const isToday = formatDateKey(new Date()) === dateKey;
 
             return (
-              <div key={dateKey} className={`rounded-xl border-2 p-4 min-h-32 ${
+              <div key={dateKey} className={`rounded-xl border-2 p-3 md:p-4 min-h-32 min-w-[120px] md:min-w-0 ${
                 isToday ? 'border-orange-600 bg-gradient-to-br from-orange-100 to-red-100 shadow-lg' : 'border-stone-300 bg-amber-50'
               }`}>
-                <div className="text-center mb-3">
+                <div className="text-center mb-2 md:mb-3">
                   <div className="text-xs text-gray-500 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                  <div className="text-2xl font-bold text-gray-900">{date.getDate()}</div>
+                  <div className="text-xl md:text-2xl font-bold text-gray-900">{date.getDate()}</div>
                 </div>
 
                 {dayDinners.map(dinner => (
@@ -809,6 +810,7 @@ function ScheduleView({
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     </div>
@@ -998,7 +1000,7 @@ function PantryView({
           {costcoItems.length === 0 ? (
             <p className="text-center text-gray-400 py-8">No Costco items yet</p>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {costcoItems.map(item => (
                 <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
                   <div className="flex items-start justify-between mb-2">
@@ -1035,7 +1037,7 @@ function PantryView({
           {otherItems.length === 0 ? (
             <p className="text-center text-gray-400 py-8">No other items yet</p>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {otherItems.map(item => (
                 <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
                   <div className="flex items-start justify-between mb-2">
@@ -1090,7 +1092,7 @@ function FamilyView({
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-gradient-to-br from-red-600 to-orange-700 rounded-xl p-6 shadow-lg">
           <div className="flex items-center gap-3 mb-2">
             <Users className="w-6 h-6 text-amber-100" />
@@ -1119,9 +1121,9 @@ function FamilyView({
           <p className="text-gray-600 mb-4">Add your household members to start coordinating dinners</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           {familyMembers.map(member => (
-            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-6 transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <div key={member.id} className="bg-amber-50 rounded-xl border-2 border-stone-300 shadow-lg p-4 md:p-6 transition-transform hover:-translate-y-1 hover:shadow-xl">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
                   {member.name ? member.name[0] : '?'}
