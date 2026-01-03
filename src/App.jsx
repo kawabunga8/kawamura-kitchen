@@ -372,11 +372,25 @@ export default function App() {
     // Mark request as scheduled
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
 
-    // Send email notification
-    await notifyFamilyMembers(
-      `Meal Scheduled: ${request.meal}`,
-      `<strong>${request.meal}</strong> has been scheduled for <strong>${new Date(dateInput).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong> at <strong>${time}</strong>.<br><br>Chef: <strong>${chef.name}</strong>`
-    );
+    // Send email notification to the chef only
+    if (chef.email && chef.email_notifications) {
+      await sendEmail(
+        chef.email,
+        `You're Cooking: ${request.meal}`,
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+            <p>Hi ${chef.name},</p>
+            <p>You've been scheduled to cook <strong>${request.meal}</strong>!</p>
+            <p><strong>Date:</strong> ${new Date(dateInput).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}<br>
+            <strong>Time:</strong> ${time}</p>
+            <p style="color: #666; font-size: 14px;">
+              You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+            </p>
+          </div>
+        `
+      );
+    }
 
     // Real-time subscriptions will update both dinners and requests automatically
   };
@@ -488,21 +502,37 @@ export default function App() {
     const newLowStockStatus = !item.low_stock;
     await supabase.from('pantry_items').update({ low_stock: newLowStockStatus }).eq('id', itemId);
 
-    // Send email notification if item just became low stock
+    // Send email notification to Shingo only if item just became low stock
     if (newLowStockStatus) {
-      const categoryEmoji = {
-        freezer: '❄️',
-        fridge: '🧊',
-        produce: '🥬',
-        pantry: '🥫',
-        spices: '🌶️'
-      };
-      const emoji = categoryEmoji[item.category || 'pantry'] || '📦';
+      const shingo = familyMembers.find(m => m.name === 'Shingo');
 
-      await notifyFamilyMembers(
-        `Low Stock Alert: ${item.name}`,
-        `${emoji} <strong>${item.name}</strong> is running low!<br><br>Current quantity: <strong>${item.quantity}</strong><br><br>Please add it to your shopping list.`
-      );
+      if (shingo && shingo.email && shingo.email_notifications) {
+        const categoryEmoji = {
+          freezer: '❄️',
+          fridge: '🧊',
+          produce: '🥬',
+          pantry: '🥫',
+          spices: '🌶️'
+        };
+        const emoji = categoryEmoji[item.category || 'pantry'] || '📦';
+
+        await sendEmail(
+          shingo.email,
+          `Low Stock Alert: ${item.name}`,
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+              <p>Hi ${shingo.name},</p>
+              <p>${emoji} <strong>${item.name}</strong> is running low!</p>
+              <p><strong>Current quantity:</strong> ${item.quantity}</p>
+              <p>Please add it to your shopping list.</p>
+              <p style="color: #666; font-size: 14px;">
+                You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+              </p>
+            </div>
+          `
+        );
+      }
     }
 
     // Real-time subscription will update automatically
