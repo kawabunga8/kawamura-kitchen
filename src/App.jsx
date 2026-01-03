@@ -165,6 +165,35 @@ export default function App() {
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
+  // Convert time input to 12-hour format with AM/PM (assumes PM unless 'am' specified)
+  const convertTo12Hour = (timeInput) => {
+    if (!timeInput) return '';
+
+    const input = timeInput.toLowerCase().trim();
+    const isAM = input.includes('am');
+    const isPM = input.includes('pm');
+
+    // Extract just the numbers
+    const timeOnly = input.replace(/[^0-9:]/g, '');
+
+    // Parse the time
+    let [hours, minutes] = timeOnly.split(':');
+    hours = parseInt(hours);
+    minutes = minutes || '00';
+
+    // If already has AM/PM, just format it
+    if (isAM || isPM) {
+      const period = isAM ? 'AM' : 'PM';
+      const displayHour = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+      return `${displayHour}:${minutes} ${period}`;
+    }
+
+    // Assume PM for times between 1-11, AM for 12
+    const period = hours === 12 ? 'PM' : 'PM';
+    const displayHour = hours > 12 ? hours - 12 : hours;
+    return `${displayHour}:${minutes} ${period}`;
+  };
+
   const addFamilyMember = async () => {
     const name = prompt('Member name:');
     if (!name) return;
@@ -272,8 +301,10 @@ export default function App() {
       return;
     }
 
-    const time = prompt('What time? (e.g., 18:00)', '18:00');
-    if (!time) return;
+    const timeInput = prompt('What time? (e.g., 6:00, 7:30am)', '6:00');
+    if (!timeInput) return;
+
+    const time = convertTo12Hour(timeInput);
 
     await supabase.from('dinners').insert([{
       date: formatDateKey(date),
@@ -358,8 +389,10 @@ export default function App() {
     }
 
     // Ask for time
-    const time = prompt('What time? (e.g., 18:00)', '18:00');
-    if (!time) return;
+    const timeInput = prompt('What time? (e.g., 6:00, 7:30am)', '6:00');
+    if (!timeInput) return;
+
+    const time = convertTo12Hour(timeInput);
 
     // Add to dinner schedule
     await supabase.from('dinners').insert([{
