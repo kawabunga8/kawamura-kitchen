@@ -128,6 +128,21 @@ export default function App() {
     setLoading(false);
   };
 
+  const loadPantryItems = async () => {
+    const { data, error } = await supabase.from('pantry_items').select('*').order('name');
+    if (!error && data) setPantryItems(data);
+  };
+
+  const loadDinners = async () => {
+    const { data, error } = await supabase.from('dinners').select('*').order('date');
+    if (!error && data) setDinners(data);
+  };
+
+  const loadRequests = async () => {
+    const { data, error } = await supabase.from('requests').select('*').order('created_at', { ascending: false });
+    if (!error && data) setRequests(data);
+  };
+
   const getWeekDates = () => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -222,15 +237,15 @@ export default function App() {
       time
     }]);
 
-    // Manually reload data after adding
-    await loadData();
+    // Reload only dinners
+    await loadDinners();
   };
 
   const deleteDinner = async (dinnerId) => {
     if (!confirm('Are you sure you want to delete this dinner?')) return;
-  
+
     await supabase.from('dinners').delete().eq('id', dinnerId);
-    await loadData();
+    await loadDinners();
   };
 
   const addRequest = async () => {
@@ -259,8 +274,8 @@ export default function App() {
       votes: 0
     }]);
 
-    // Manually reload data after adding
-    await loadData();
+    // Reload only requests
+    await loadRequests();
   };
 
   const scheduleRequest = async (requestId) => {
@@ -309,8 +324,8 @@ export default function App() {
     // Mark request as scheduled
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
 
-    // Reload data to show the new dinner
-    await loadData();
+    // Reload dinners and requests
+    await Promise.all([loadDinners(), loadRequests()]);
   };
 
   const deleteRequest = async (requestId) => {
@@ -327,7 +342,7 @@ export default function App() {
       await supabase.from('requests').delete().eq('id', requestId);
     }
 
-    await loadData();
+    await loadRequests();
   };
 
   const voteOnRequest = async (requestId) => {
@@ -387,8 +402,8 @@ export default function App() {
       source: isCostco ? 'costco' : 'other'
     }]);
 
-    // Manually reload data after adding
-    await loadData();
+    // Reload only pantry items
+    await loadPantryItems();
   };
 
   const toggleLowStock = async (itemId) => {
@@ -399,7 +414,7 @@ export default function App() {
 
   const deletePantryItem = async (itemId) => {
     await supabase.from('pantry_items').delete().eq('id', itemId);
-    await loadData();
+    await loadPantryItems();
   };
 
   // Show login screen if not authenticated
