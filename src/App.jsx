@@ -188,27 +188,69 @@ export default function App() {
   const deleteFamilyMember = async (memberId) => {
     console.log('Delete clicked for member:', memberId);
     console.log('Current family members:', familyMembers);
-  
+
     if (!confirm('Are you sure you want to remove this family member?')) return;
-  
+
     console.log('Delete confirmed');
-  
+
     const { data, error } = await supabase
       .from('family_members')
       .delete()
       .eq('id', memberId);
-  
+
     console.log('Delete result:', { data, error });
-  
+
     if (error) {
       console.error('Error deleting member:', error);
       alert('Failed to delete family member');
       return;
     }
-  
+
     console.log('Calling loadData...');
     await loadData();
     console.log('Family members after reload:', familyMembers);
+  };
+
+  // Email notification helper
+  const sendEmail = async (to, subject, html) => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, subject, html })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send email:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+    }
+  };
+
+  const notifyFamilyMembers = async (subject, message) => {
+    const subscribedMembers = familyMembers.filter(m => m.email_notifications && m.email);
+
+    if (subscribedMembers.length === 0) return;
+
+    const emailPromises = subscribedMembers.map(member =>
+      sendEmail(
+        member.email,
+        subject,
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+            <p>Hi ${member.name},</p>
+            <p>${message}</p>
+            <p style="color: #666; font-size: 14px;">
+              You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+            </p>
+          </div>
+        `
+      )
+    );
+
+    await Promise.all(emailPromises);
   };
 
   const addDinner = async (date) => {
@@ -274,6 +316,13 @@ export default function App() {
       status: 'pending',
       votes: 0
     }]);
+
+    // Send email notification
+    await notifyFamilyMembers(
+      `New Meal Request: ${meal}`,
+      `<strong>${requestor.name}</strong> has requested <strong>${meal}</strong> for an upcoming dinner. Vote on this request in the app!`
+    );
+
     // Real-time subscription will update automatically
   };
 
@@ -322,6 +371,27 @@ export default function App() {
 
     // Mark request as scheduled
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
+
+    // Send email notification to the chef only
+    if (chef.email && chef.email_notifications) {
+      await sendEmail(
+        chef.email,
+        `You're Cooking: ${request.meal}`,
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+            <p>Hi ${chef.name},</p>
+            <p>You've been scheduled to cook <strong>${request.meal}</strong>!</p>
+            <p><strong>Date:</strong> ${new Date(dateInput).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}<br>
+            <strong>Time:</strong> ${time}</p>
+            <p style="color: #666; font-size: 14px;">
+              You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+            </p>
+          </div>
+        `
+      );
+    }
+
     // Real-time subscriptions will update both dinners and requests automatically
   };
 
@@ -428,7 +498,43 @@ export default function App() {
   const toggleLowStock = async (itemId) => {
     const item = pantryItems.find(i => i.id === itemId);
     if (!item) return;
-    await supabase.from('pantry_items').update({ low_stock: !item.low_stock }).eq('id', itemId);
+
+    const newLowStockStatus = !item.low_stock;
+    await supabase.from('pantry_items').update({ low_stock: newLowStockStatus }).eq('id', itemId);
+
+    // Send email notification to Shingo only if item just became low stock
+    if (newLowStockStatus) {
+      const shingo = familyMembers.find(m => m.name === 'Shingo');
+
+      if (shingo && shingo.email && shingo.email_notifications) {
+        const categoryEmoji = {
+          freezer: '❄️',
+          fridge: '🧊',
+          produce: '🥬',
+          pantry: '🥫',
+          spices: '🌶️'
+        };
+        const emoji = categoryEmoji[item.category || 'pantry'] || '📦';
+
+        await sendEmail(
+          shingo.email,
+          `Low Stock Alert: ${item.name}`,
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+              <p>Hi ${shingo.name},</p>
+              <p>${emoji} <strong>${item.name}</strong> is running low!</p>
+              <p><strong>Current quantity:</strong> ${item.quantity}</p>
+              <p>Please add it to your shopping list.</p>
+              <p style="color: #666; font-size: 14px;">
+                You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+              </p>
+            </div>
+          `
+        );
+      }
+    }
+
     // Real-time subscription will update automatically
   };
 
