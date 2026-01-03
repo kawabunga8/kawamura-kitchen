@@ -8,6 +8,8 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
   const [activeView, setActiveView] = useState('dashboard');
   const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart(new Date()));
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -18,6 +20,33 @@ export default function App() {
   const [requestTab, setRequestTab] = useState('pending');
   const [loading, setLoading] = useState(true);
 
+  const FAMILY_PASSWORD = 'RiverVillage';
+
+  // Check if already authenticated on mount
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('kawamura_kitchen_auth');
+    if (savedAuth === 'authenticated') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === FAMILY_PASSWORD) {
+      setIsAuthenticated(true);
+      localStorage.setItem('kawamura_kitchen_auth', 'authenticated');
+      setPasswordInput('');
+    } else {
+      alert('Incorrect password. Please try again.');
+      setPasswordInput('');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('kawamura_kitchen_auth');
+  };
+
   function getWeekStart(date) {
     const d = new Date(date);
     const day = d.getDay();
@@ -26,6 +55,8 @@ export default function App() {
   }
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     loadData();
 
     // Realtime subscriptions
@@ -73,7 +104,7 @@ export default function App() {
       supabase.removeChannel(votesSubscription);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAuthenticated]);
 
   const loadData = async () => {
     setLoading(true);
@@ -370,6 +401,55 @@ export default function App() {
     await supabase.from('pantry_items').delete().eq('id', itemId);
   };
 
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+        <div className="w-full max-w-md p-8">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-stone-300">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-orange-700 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4">
+                <span className="text-amber-50 font-bold text-3xl">川村</span>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Kawamura Kitchen</h1>
+              <p className="text-gray-600">Family Members Only</p>
+            </div>
+
+            <form onSubmit={handleLogin}>
+              <div className="mb-6">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Family Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-600 focus:ring-2 focus:ring-orange-200 transition-colors"
+                  placeholder="Enter password"
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium text-lg"
+              >
+                Enter Kitchen
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-xs text-gray-500">
+                🔒 Password required to prevent unauthorized access
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
@@ -452,10 +532,17 @@ export default function App() {
         </nav>
 
         <div className="p-4 border-t border-emerald-700">
-          <div className="bg-emerald-950 border border-emerald-600 rounded-lg p-3">
+          <div className="bg-emerald-950 border border-emerald-600 rounded-lg p-3 mb-3">
             <p className="text-xs font-semibold text-amber-100 mb-1">🌐 Live Sync</p>
             <p className="text-xs text-emerald-200">Everyone sees updates in real-time!</p>
           </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-amber-50 rounded-lg transition-colors text-sm font-medium"
+          >
+            🔒 Logout
+          </button>
         </div>
       </div>
 
