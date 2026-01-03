@@ -1,26 +1,29 @@
 -- Fix for 409 Conflict Error on pantry_items
--- Run these queries in Supabase SQL Editor
+-- Run this entire script in Supabase SQL Editor
 
--- Step 1: Check what unique constraints exist
-SELECT
-    tc.constraint_name,
-    kcu.column_name
-FROM information_schema.table_constraints tc
-JOIN information_schema.key_column_usage kcu
-    ON tc.constraint_name = kcu.constraint_name
-WHERE tc.table_name = 'pantry_items'
-  AND tc.constraint_type = 'UNIQUE';
+-- This will automatically find and drop the unique constraint
+DO $$
+DECLARE
+    constraint_name_var text;
+BEGIN
+    -- Find the unique constraint name
+    SELECT constraint_name INTO constraint_name_var
+    FROM information_schema.table_constraints
+    WHERE table_name = 'pantry_items'
+      AND constraint_type = 'UNIQUE'
+    LIMIT 1;
 
--- Step 2: DROP the unique constraint (replace constraint_name with actual name from step 1)
--- Example: ALTER TABLE pantry_items DROP CONSTRAINT pantry_items_name_key;
--- OR if it's (name, source): ALTER TABLE pantry_items DROP CONSTRAINT pantry_items_name_source_key;
+    -- Drop it if it exists
+    IF constraint_name_var IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE pantry_items DROP CONSTRAINT %I', constraint_name_var);
+        RAISE NOTICE 'Dropped constraint: %', constraint_name_var;
+    ELSE
+        RAISE NOTICE 'No unique constraint found on pantry_items';
+    END IF;
+END $$;
 
--- Step 3: Verify no more unique constraints (should return empty)
-SELECT
-    tc.constraint_name,
-    kcu.column_name
-FROM information_schema.table_constraints tc
-JOIN information_schema.key_column_usage kcu
-    ON tc.constraint_name = kcu.constraint_name
-WHERE tc.table_name = 'pantry_items'
-  AND tc.constraint_type = 'UNIQUE';
+-- Verify it's gone (should return empty result)
+SELECT constraint_name, constraint_type
+FROM information_schema.table_constraints
+WHERE table_name = 'pantry_items'
+  AND constraint_type = 'UNIQUE';
