@@ -388,6 +388,16 @@ export default function App() {
     const quantity = prompt('Quantity:');
     if (!quantity) return;
 
+    const categoryChoice = prompt('Category:\n1. Freezer\n2. Fridge\n3. Produce\n4. Pantry (default)\n5. Spices\n\nEnter number (or press Enter for Pantry):');
+    const categoryMap = {
+      '1': 'freezer',
+      '2': 'fridge',
+      '3': 'produce',
+      '4': 'pantry',
+      '5': 'spices'
+    };
+    const category = categoryMap[categoryChoice] || 'pantry';
+
     const source = prompt('Where is this from?\n1. Other (default)\n2. Costco\n\nEnter number (or press Enter for Other):');
     const isCostco = source === '2';
 
@@ -395,7 +405,8 @@ export default function App() {
       name,
       quantity,
       low_stock: false,
-      source: isCostco ? 'costco' : 'other'
+      source: isCostco ? 'costco' : 'other',
+      category
     }]).select();
 
     if (error) {
@@ -965,21 +976,32 @@ function RequestsView({
 }
 
 // Pantry View Component
-function PantryView({ 
-  pantryItems, 
-  addPantryItem, 
-  toggleLowStock, 
-  deletePantryItem 
+function PantryView({
+  pantryItems,
+  addPantryItem,
+  toggleLowStock,
+  deletePantryItem
 }) {
-  const costcoItems = pantryItems.filter(item => item.source === 'costco');
-  const otherItems = pantryItems.filter(item => item.source === 'other');
+  // Group items by category
+  const categories = ['freezer', 'fridge', 'produce', 'pantry', 'spices'];
+  const categoryLabels = {
+    freezer: { name: 'Freezer', icon: '❄️', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+    fridge: { name: 'Fridge', icon: '🧊', color: 'bg-cyan-100 text-cyan-800 border-cyan-300' },
+    produce: { name: 'Produce', icon: '🥬', color: 'bg-green-100 text-green-800 border-green-300' },
+    pantry: { name: 'Pantry', icon: '🥫', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+    spices: { name: 'Spices', icon: '🌶️', color: 'bg-orange-100 text-orange-800 border-orange-300' }
+  };
+
+  const getItemsByCategory = (category) => {
+    return pantryItems.filter(item => (item.category || 'pantry') === category);
+  };
 
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Pantry</h1>
-          <p className="text-sm md:text-base text-gray-600">Track your ingredients and supplies</p>
+          <p className="text-sm md:text-base text-gray-600">Track your ingredients and supplies by category</p>
         </div>
         <button
           onClick={addPantryItem}
@@ -990,82 +1012,60 @@ function PantryView({
         </button>
       </div>
 
-      {/* Costco Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Costco Items</h2>
-          <span className="px-3 py-1 bg-red-600 text-amber-50 text-xs font-bold rounded-full">COSTCO</span>
-          <span className="text-gray-500">({costcoItems.length})</span>
-        </div>
-        <div className="bg-white rounded-xl border-2 border-stone-300 shadow-lg p-6">
-          {costcoItems.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No Costco items yet</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {costcoItems.map(item => (
-                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <button onClick={() => deletePantryItem(item.id)} className="text-gray-400 hover:text-red-500">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
-                  <button
-                    onClick={() => toggleLowStock(item.id)}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors shadow ${
-                      item.low_stock
-                        ? 'bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 hover:from-red-700 hover:to-orange-800'
-                        : 'bg-emerald-700 text-amber-50 hover:bg-emerald-800'
-                    }`}
-                  >
-                    {item.low_stock ? 'Low Stock' : 'In Stock'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Category Sections */}
+      <div className="space-y-6">
+        {categories.map(category => {
+          const items = getItemsByCategory(category);
+          if (items.length === 0) return null;
 
-      {/* Other Items Section */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Other Items</h2>
-          <span className="text-gray-500">({otherItems.length})</span>
-        </div>
-        <div className="bg-white rounded-xl border-2 border-stone-300 shadow-lg p-6">
-          {otherItems.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No other items yet</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {otherItems.map(item => (
-                <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <button
-                      onClick={() => deletePantryItem(item.id)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
-                  <button
-                    onClick={() => toggleLowStock(item.id)}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors shadow ${
-                      item.low_stock
-                        ? 'bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 hover:from-red-700 hover:to-orange-800'
-                        : 'bg-emerald-700 text-amber-50 hover:bg-emerald-800'
-                    }`}
-                  >
-                    {item.low_stock ? 'Low Stock' : 'In Stock'}
-                  </button>
+          const categoryInfo = categoryLabels[category];
+
+          return (
+            <div key={category}>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                  {categoryInfo.icon} {categoryInfo.name}
+                </h2>
+                <span className="text-gray-500">({items.length})</span>
+              </div>
+              <div className="bg-white rounded-xl border-2 border-stone-300 shadow-lg p-4 md:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {items.map(item => (
+                    <div key={item.id} className={`p-4 rounded-lg border-2 shadow ${item.low_stock ? 'border-red-600 bg-red-50' : 'border-stone-300 bg-amber-50'}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 mb-1">{item.name}</h4>
+                          {item.source === 'costco' && (
+                            <span className="inline-block px-2 py-0.5 bg-red-600 text-amber-50 text-xs font-bold rounded">
+                              COSTCO
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => deletePantryItem(item.id)}
+                          className="text-gray-400 hover:text-red-500 ml-2"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
+                      <button
+                        onClick={() => toggleLowStock(item.id)}
+                        className={`w-full py-2 rounded-lg text-sm font-medium transition-colors shadow ${
+                          item.low_stock
+                            ? 'bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 hover:from-red-700 hover:to-orange-800'
+                            : 'bg-emerald-700 text-amber-50 hover:bg-emerald-800'
+                        }`}
+                      >
+                        {item.low_stock ? 'Low Stock' : 'In Stock'}
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
