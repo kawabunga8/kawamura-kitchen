@@ -1,6 +1,6 @@
 // Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp } from 'lucide-react';
+import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp, Menu } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -18,6 +18,7 @@ export default function App() {
   const [pantryItems, setPantryItems] = useState([]);
   const [votes, setVotes] = useState([]);
   const [requestTab, setRequestTab] = useState('pending');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const FAMILY_PASSWORD = 'RiverVillage';
@@ -489,9 +490,30 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-800 border-r border-emerald-700 flex flex-col">
-        <div className="p-6 border-b border-emerald-700">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-emerald-900 to-emerald-800 border-b border-emerald-700 z-50 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-orange-700 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-amber-50 font-bold">川村</span>
+          </div>
+          <h1 className="text-lg font-bold text-amber-50">Kawamura Kitchen</h1>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-amber-50 hover:bg-emerald-700 rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Sidebar - Desktop & Mobile Overlay */}
+      <div className={`
+        fixed md:static inset-0 z-40 transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        w-64 bg-gradient-to-b from-emerald-900 to-emerald-800 border-r border-emerald-700 flex flex-col
+        mt-16 md:mt-0
+      `}>
+        <div className="p-6 border-b border-emerald-700 hidden md:block">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-orange-700 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-amber-50 font-bold text-lg">川村</span>
@@ -505,7 +527,7 @@ export default function App() {
 
         <nav className="flex-1 p-4">
           <button
-            onClick={() => setActiveView('dashboard')}
+            onClick={() => { setActiveView('dashboard'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               activeView === 'dashboard' ? 'bg-orange-700 text-amber-50' : 'text-emerald-100 hover:bg-emerald-700'
             }`}
@@ -515,7 +537,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView('schedule')}
+            onClick={() => { setActiveView('schedule'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               activeView === 'schedule' ? 'bg-orange-700 text-amber-50' : 'text-emerald-100 hover:bg-emerald-700'
             }`}
@@ -525,7 +547,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView('requests')}
+            onClick={() => { setActiveView('requests'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               activeView === 'requests' ? 'bg-orange-700 text-amber-50' : 'text-emerald-100 hover:bg-emerald-700'
             }`}
@@ -535,7 +557,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView('pantry')}
+            onClick={() => { setActiveView('pantry'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               activeView === 'pantry' ? 'bg-orange-700 text-amber-50' : 'text-emerald-100 hover:bg-emerald-700'
             }`}
@@ -545,7 +567,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView('family')}
+            onClick={() => { setActiveView('family'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               activeView === 'family' ? 'bg-orange-700 text-amber-50' : 'text-emerald-100 hover:bg-emerald-700'
             }`}
@@ -570,8 +592,16 @@ export default function App() {
         </div>
       </div>
 
+      {/* Mobile Overlay Background */}
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30 mt-16"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto pt-16 md:pt-0">
         {activeView === 'dashboard' && <DashboardView dinners={dinners} requests={requests} pantryItems={pantryItems} />}
         {activeView === 'schedule' && (
           <ScheduleView
@@ -627,11 +657,11 @@ function DashboardView({
   const lowStockItems = pantryItems.filter(item => item.low_stock);
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-      <p className="text-gray-600 mb-8">Welcome back! Here is what is happening this week</p>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+      <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Welcome back! Here is what is happening this week</p>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-gradient-to-br from-red-600 to-orange-700 rounded-xl p-6 shadow-lg">
           <div className="text-3xl font-bold text-amber-50 mb-1">{dinners.length}</div>
           <div className="text-sm text-orange-100">Meals Planned</div>
@@ -700,15 +730,15 @@ function ScheduleView({
   const weekDates = getWeekDates();
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dinner Schedule</h1>
-          <p className="text-gray-600">Plan and organize your meals</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Dinner Schedule</h1>
+          <p className="text-sm md:text-base text-gray-600">Plan and organize your meals</p>
         </div>
         <button
           onClick={() => addDinner(new Date())}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
+          className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
           Add Dinner
@@ -807,15 +837,15 @@ function RequestsView({
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Meal Requests</h1>
-          <p className="text-gray-600">Suggest and vote on meal ideas</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Meal Requests</h1>
+          <p className="text-sm md:text-base text-gray-600">Suggest and vote on meal ideas</p>
         </div>
         <button
           onClick={addRequest}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
+          className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
           Request a Meal
@@ -942,15 +972,15 @@ function PantryView({
   const otherItems = pantryItems.filter(item => item.source === 'other');
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pantry</h1>
-          <p className="text-gray-600">Track your ingredients and supplies</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Pantry</h1>
+          <p className="text-sm md:text-base text-gray-600">Track your ingredients and supplies</p>
         </div>
         <button
           onClick={addPantryItem}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
+          className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
           Add Item
@@ -1045,15 +1075,15 @@ function FamilyView({
   deleteFamilyMember 
 }) {
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Family</h1>
-          <p className="text-gray-600">Manage household members</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Family</h1>
+          <p className="text-sm md:text-base text-gray-600">Manage household members</p>
         </div>
         <button
           onClick={addFamilyMember}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
+          className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
           Add Member
