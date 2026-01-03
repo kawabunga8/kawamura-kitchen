@@ -399,6 +399,7 @@ export default function App() {
 
   const deletePantryItem = async (itemId) => {
     await supabase.from('pantry_items').delete().eq('id', itemId);
+    await loadData();
   };
 
   // Show login screen if not authenticated
