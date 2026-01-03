@@ -282,6 +282,23 @@ export default function App() {
     await loadData();
   };
 
+  const deleteRequest = async (requestId) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return;
+
+    if (request.status === 'scheduled') {
+      // If scheduled, just move it back to pending (unschedule)
+      if (!confirm('Unschedule this meal and move it back to pending?')) return;
+      await supabase.from('requests').update({ status: 'pending' }).eq('id', requestId);
+    } else {
+      // If pending, delete it completely
+      if (!confirm('Are you sure you want to delete this request?')) return;
+      await supabase.from('requests').delete().eq('id', requestId);
+    }
+
+    await loadData();
+  };
+
   const voteOnRequest = async (requestId) => {
     if (familyMembers.length === 0) {
       alert('Please add family members first!');
@@ -465,6 +482,7 @@ export default function App() {
             setRequestTab={setRequestTab}
             addRequest={addRequest}
             scheduleRequest={scheduleRequest}
+            deleteRequest={deleteRequest}
             voteOnRequest={voteOnRequest}
           />
         )}
@@ -664,6 +682,7 @@ function RequestsView({
   setRequestTab,
   addRequest,
   scheduleRequest,
+  deleteRequest,
   voteOnRequest
 }) {
   const filteredRequests = requests.filter(r => {
@@ -738,7 +757,14 @@ function RequestsView({
               {filteredRequests.map(request => {
                 const requestVoters = getVotersForRequest(request.id);
                 return (
-                  <div key={request.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={request.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors relative group">
+                    <button
+                      onClick={() => deleteRequest(request.id)}
+                      className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      title={request.status === 'scheduled' ? 'Unschedule and move to pending' : 'Delete request'}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">{request.meal}</h4>
