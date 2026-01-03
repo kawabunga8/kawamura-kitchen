@@ -262,7 +262,17 @@ export default function App() {
 
     if (subscribedMembers.length === 0) return;
 
-    const emailPromises = subscribedMembers.map(member =>
+    // TEMPORARY: Resend free tier only allows sending to kawamura.shingo@gmail.com
+    // Remove this filter after verifying a domain at resend.com/domains
+    const allowedEmail = 'kawamura.shingo@gmail.com';
+    const filteredMembers = subscribedMembers.filter(m => m.email === allowedEmail);
+
+    if (filteredMembers.length === 0) {
+      console.log(`Email notifications enabled but no member with email ${allowedEmail} found`);
+      return;
+    }
+
+    const emailPromises = filteredMembers.map(member =>
       sendEmail(
         member.email,
         subject,
@@ -406,7 +416,8 @@ export default function App() {
     await supabase.from('requests').update({ status: 'scheduled' }).eq('id', requestId);
 
     // Send email notification to the chef only
-    if (chef.email && chef.email_notifications) {
+    // TEMPORARY: Only send to kawamura.shingo@gmail.com until domain is verified
+    if (chef.email && chef.email_notifications && chef.email === 'kawamura.shingo@gmail.com') {
       await sendEmail(
         chef.email,
         `You're Cooking: ${request.meal}`,
@@ -536,10 +547,11 @@ export default function App() {
     await supabase.from('pantry_items').update({ low_stock: newLowStockStatus }).eq('id', itemId);
 
     // Send email notification to Shingo only if item just became low stock
+    // TEMPORARY: Only send to kawamura.shingo@gmail.com until domain is verified
     if (newLowStockStatus) {
       const shingo = familyMembers.find(m => m.name === 'Shingo');
 
-      if (shingo && shingo.email && shingo.email_notifications) {
+      if (shingo && shingo.email && shingo.email_notifications && shingo.email === 'kawamura.shingo@gmail.com') {
         const categoryEmoji = {
           freezer: '❄️',
           fridge: '🧊',
