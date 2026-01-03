@@ -764,7 +764,7 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto pt-16 md:pt-0">
-        {activeView === 'dashboard' && <DashboardView dinners={dinners} requests={requests} pantryItems={pantryItems} />}
+        {activeView === 'dashboard' && <DashboardView dinners={dinners} requests={requests} pantryItems={pantryItems} setActiveView={setActiveView} />}
         {activeView === 'schedule' && (
           <ScheduleView
             dinners={dinners}
@@ -810,10 +810,11 @@ export default function App() {
 }
 
 // Dashboard View Component
-function DashboardView({ 
-  dinners, 
-  requests, 
-  pantryItems 
+function DashboardView({
+  dinners,
+  requests,
+  pantryItems,
+  setActiveView
 }) {
   const upcomingDinners = dinners.filter(d => new Date(d.date) >= new Date()).slice(0, 3);
   const lowStockItems = pantryItems.filter(item => item.low_stock);
@@ -824,18 +825,27 @@ function DashboardView({
       <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Welcome back! Here is what is happening this week</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-        <div className="bg-gradient-to-br from-red-600 to-orange-700 rounded-xl p-6 shadow-lg">
+        <button
+          onClick={() => setActiveView('schedule')}
+          className="bg-gradient-to-br from-red-600 to-orange-700 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 text-left cursor-pointer"
+        >
           <div className="text-3xl font-bold text-amber-50 mb-1">{dinners.length}</div>
           <div className="text-sm text-orange-100">Meals Planned</div>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-6 shadow-lg">
+        </button>
+        <button
+          onClick={() => setActiveView('requests')}
+          className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 text-left cursor-pointer"
+        >
           <div className="text-3xl font-bold text-amber-50 mb-1">{requests.filter(r => r.status === 'pending').length}</div>
           <div className="text-sm text-emerald-100">Pending Requests</div>
-        </div>
-        <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 shadow-lg">
+        </button>
+        <button
+          onClick={() => setActiveView('pantry')}
+          className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 text-left cursor-pointer"
+        >
           <div className="text-3xl font-bold text-amber-50 mb-1">{lowStockItems.length}</div>
           <div className="text-sm text-orange-100">Low Stock Items</div>
-        </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
