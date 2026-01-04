@@ -577,12 +577,15 @@ export default function App() {
     const source = prompt('Where is this from?\n1. Other (default)\n2. Costco\n\nEnter number (or press Enter for Other):');
     const isCostco = source === '2';
 
+    const notes = prompt('Notes (optional):') || '';
+
     const { data, error } = await supabase.from('pantry_items').insert([{
       name,
       quantity,
       low_stock: false,
       source: isCostco ? 'costco' : 'other',
-      category
+      category,
+      notes
     }]).select();
 
     if (error) {
@@ -646,6 +649,59 @@ export default function App() {
 
   const deletePantryItem = async (itemId) => {
     await supabase.from('pantry_items').delete().eq('id', itemId);
+    // Real-time subscription will update automatically
+  };
+
+  const editPantryItem = async (item) => {
+    // Edit name
+    const name = prompt('Item name:', item.name);
+    if (name === null) return; // User cancelled
+    if (!name) {
+      alert('Item name cannot be empty');
+      return;
+    }
+
+    // Edit quantity
+    const quantity = prompt('Quantity:', item.quantity);
+    if (quantity === null) return; // User cancelled
+    if (!quantity) {
+      alert('Quantity cannot be empty');
+      return;
+    }
+
+    // Edit category
+    const categoryMap = { '1': 'freezer', '2': 'fridge', '3': 'produce', '4': 'pantry', '5': 'spices' };
+    const reverseCategoryMap = { freezer: '1', fridge: '2', produce: '3', pantry: '4', spices: '5' };
+    const currentCategoryNum = reverseCategoryMap[item.category || 'pantry'] || '4';
+    const categoryChoice = prompt(
+      `Category:\n1. Freezer\n2. Fridge\n3. Produce\n4. Pantry\n5. Spices\n\nCurrent: ${item.category || 'pantry'}\nEnter number:`,
+      currentCategoryNum
+    );
+    if (categoryChoice === null) return; // User cancelled
+    const category = categoryMap[categoryChoice] || item.category || 'pantry';
+
+    // Edit source
+    const currentSourceNum = item.source === 'costco' ? '2' : '1';
+    const sourceChoice = prompt(
+      `Where is this from?\n1. Other\n2. Costco\n\nCurrent: ${item.source === 'costco' ? 'Costco' : 'Other'}\nEnter number:`,
+      currentSourceNum
+    );
+    if (sourceChoice === null) return; // User cancelled
+    const source = sourceChoice === '2' ? 'costco' : 'other';
+
+    // Edit notes
+    const notes = prompt('Notes (optional):', item.notes || '');
+    if (notes === null) return; // User cancelled
+
+    // Update item
+    await supabase.from('pantry_items').update({
+      name,
+      quantity,
+      category,
+      source,
+      notes: notes || ''
+    }).eq('id', item.id);
+
     // Real-time subscription will update automatically
   };
 
@@ -857,6 +913,7 @@ export default function App() {
             addPantryItem={addPantryItem}
             toggleLowStock={toggleLowStock}
             deletePantryItem={deletePantryItem}
+            editPantryItem={editPantryItem}
           />
         )}
         {activeView === 'family' && (
@@ -1219,7 +1276,8 @@ function PantryView({
   pantryItems,
   addPantryItem,
   toggleLowStock,
-  deletePantryItem
+  deletePantryItem,
+  editPantryItem
 }) {
   // Group items by category
   const categories = ['freezer', 'fridge', 'produce', 'pantry', 'spices'];
@@ -1280,14 +1338,30 @@ function PantryView({
                             </span>
                           )}
                         </div>
-                        <button
-                          onClick={() => deletePantryItem(item.id)}
-                          className="text-gray-400 hover:text-red-500 ml-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-1 ml-2">
+                          <button
+                            onClick={() => editPantryItem(item)}
+                            className="text-gray-400 hover:text-orange-500"
+                            title="Edit item"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deletePantryItem(item.id)}
+                            className="text-gray-400 hover:text-red-500"
+                            title="Delete item"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
+                      <p className="text-sm text-gray-600 mb-1">{item.quantity}</p>
+                      {item.notes && (
+                        <p className="text-xs text-gray-500 italic mb-2 flex items-start gap-1">
+                          <MessageSquare className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                          {item.notes}
+                        </p>
+                      )}
                       <button
                         onClick={() => toggleLowStock(item.id)}
                         className={`w-full py-2 rounded-lg text-sm font-medium transition-colors shadow ${
