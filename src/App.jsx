@@ -50,9 +50,11 @@ export default function App() {
 
   function getWeekStart(date) {
     const d = new Date(date);
+    d.setHours(0, 0, 0, 0); // Normalize to midnight
     const day = d.getDay();
-    const diff = d.getDate() - day;
-    return new Date(d.setDate(diff));
+    const diff = -day; // Days to subtract to get to Sunday
+    d.setDate(d.getDate() + diff);
+    return d;
   }
 
   useEffect(() => {
@@ -150,6 +152,7 @@ export default function App() {
     const dates = [];
     for (let i = 0; i < 7; i++) {
       const date = new Date(currentWeekStart);
+      date.setHours(0, 0, 0, 0); // Normalize to midnight
       date.setDate(currentWeekStart.getDate() + i);
       dates.push(date);
     }
