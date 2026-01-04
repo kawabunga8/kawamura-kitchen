@@ -1,6 +1,6 @@
 // Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp, Menu, Edit, MessageSquare } from 'lucide-react';
+import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp, Menu, Edit, MessageSquare, Mail } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -558,6 +558,67 @@ export default function App() {
     await supabase.from('requests').update({ votes: currentVotes }).eq('id', requestId);
   };
 
+  const messageRequestCreator = async (request) => {
+    // Find the creator in family members
+    const creator = familyMembers.find(m => m.name === request.requested_by);
+
+    if (!creator) {
+      alert(`Could not find ${request.requested_by} in family members.`);
+      return;
+    }
+
+    if (!creator.email) {
+      alert(`${creator.name} does not have an email address set up.`);
+      return;
+    }
+
+    if (!creator.email_notifications) {
+      alert(`${creator.name} has email notifications disabled.`);
+      return;
+    }
+
+    if (familyMembers.length === 0) {
+      alert('Please add family members first!');
+      return;
+    }
+
+    // Ask who is sending
+    const senderOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+    const senderIndex = prompt(`Who is sending this message?\n${senderOptions}\n\nEnter number:`);
+    if (!senderIndex) return;
+
+    const sender = familyMembers[parseInt(senderIndex) - 1];
+    if (!sender) {
+      alert('Invalid selection');
+      return;
+    }
+
+    // Ask for message
+    const message = prompt(`Your message to ${creator.name} about "${request.meal}":`);
+    if (!message) return;
+
+    // Send the email
+    await sendEmail(
+      creator.email,
+      `Message about your request: ${request.meal}`,
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ea580c;">🍳 Kawamura Kitchen</h2>
+          <p>Hi ${creator.name},</p>
+          <p><strong>${sender.name}</strong> sent you a message about your meal request "<strong>${request.meal}</strong>":</p>
+          <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            You're receiving this because you have email notifications enabled in Kawamura Kitchen.
+          </p>
+        </div>
+      `
+    );
+
+    alert(`Message sent to ${creator.name}!`);
+  };
+
   const addPantryItem = async () => {
     const name = prompt('Item name:');
     if (!name) return;
@@ -905,6 +966,7 @@ export default function App() {
             scheduleRequest={scheduleRequest}
             deleteRequest={deleteRequest}
             voteOnRequest={voteOnRequest}
+            messageRequestCreator={messageRequestCreator}
           />
         )}
         {activeView === 'pantry' && (
@@ -1133,7 +1195,8 @@ function RequestsView({
   addRequest,
   scheduleRequest,
   deleteRequest,
-  voteOnRequest
+  voteOnRequest,
+  messageRequestCreator
 }) {
   const filteredRequests = requests.filter(r => {
     if (requestTab === 'pending') return r.status === 'pending';
@@ -1230,6 +1293,14 @@ function RequestsView({
                         >
                           <ThumbsUp className="w-4 h-4" />
                           <span className="font-semibold">{request.votes}</span>
+                        </button>
+
+                        <button
+                          onClick={() => messageRequestCreator(request)}
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow"
+                          title="Message the requester"
+                        >
+                          <Mail className="w-4 h-4" />
                         </button>
 
                         {request.status === 'pending' && (
