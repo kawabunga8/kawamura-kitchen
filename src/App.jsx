@@ -281,19 +281,25 @@ export default function App() {
     const meal = prompt('What is for dinner?');
     if (!meal) return;
 
+    let chefName;
+
     if (familyMembers.length === 0) {
-      alert('Please add family members first!');
-      return;
-    }
+      chefName = prompt('Who is cooking?');
+      if (!chefName) return;
+    } else {
+      const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+      const chefInput = prompt(`Who is cooking?\n${chefOptions}\n${familyMembers.length + 1}. Other (type name)\n\nEnter number or type name:`);
+      if (!chefInput) return;
 
-    const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
-    const chefIndex = prompt(`Who is cooking?\n${chefOptions}\n\nEnter number:`);
-    if (!chefIndex) return;
-
-    const chef = familyMembers[parseInt(chefIndex) - 1];
-    if (!chef) {
-      alert('Invalid selection');
-      return;
+      const chefIndex = parseInt(chefInput);
+      if (!isNaN(chefIndex) && chefIndex >= 1 && chefIndex <= familyMembers.length) {
+        // User selected a number from the list
+        const chef = familyMembers[chefIndex - 1];
+        chefName = chef.name;
+      } else {
+        // User typed a custom name or selected "Other"
+        chefName = chefInput;
+      }
     }
 
     const timeInput = prompt('What time? (e.g., 6:00, 7:30am)', '6:00');
@@ -306,7 +312,7 @@ export default function App() {
     await supabase.from('dinners').insert([{
       date: formatDateKey(date),
       meal,
-      chef: chef.name,
+      chef: chefName,
       time,
       notes
     }]);
@@ -321,11 +327,6 @@ export default function App() {
   };
 
   const editDinner = async (dinner) => {
-    if (familyMembers.length === 0) {
-      alert('Please add family members first!');
-      return;
-    }
-
     // Edit meal
     const meal = prompt('Meal name:', dinner.meal);
     if (meal === null) return; // User cancelled
@@ -335,15 +336,35 @@ export default function App() {
     }
 
     // Edit chef
-    const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
-    const currentChefIndex = familyMembers.findIndex(m => m.name === dinner.chef) + 1;
-    const chefIndex = prompt(`Who is cooking?\n${chefOptions}\n\nCurrent: ${dinner.chef} (#${currentChefIndex})\nEnter number:`, currentChefIndex);
-    if (chefIndex === null) return; // User cancelled
+    let chefName;
 
-    const chef = familyMembers[parseInt(chefIndex) - 1];
-    if (!chef) {
-      alert('Invalid selection');
-      return;
+    if (familyMembers.length === 0) {
+      chefName = prompt('Who is cooking?', dinner.chef);
+      if (chefName === null) return; // User cancelled
+      if (!chefName) {
+        alert('Chef name cannot be empty');
+        return;
+      }
+    } else {
+      const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+      const currentChefIndex = familyMembers.findIndex(m => m.name === dinner.chef) + 1;
+      const defaultValue = currentChefIndex > 0 ? currentChefIndex : dinner.chef;
+      const chefInput = prompt(`Who is cooking?\n${chefOptions}\n${familyMembers.length + 1}. Other (type name)\n\nCurrent: ${dinner.chef}\nEnter number or type name:`, defaultValue);
+      if (chefInput === null) return; // User cancelled
+      if (!chefInput) {
+        alert('Chef name cannot be empty');
+        return;
+      }
+
+      const chefIndex = parseInt(chefInput);
+      if (!isNaN(chefIndex) && chefIndex >= 1 && chefIndex <= familyMembers.length) {
+        // User selected a number from the list
+        const chef = familyMembers[chefIndex - 1];
+        chefName = chef.name;
+      } else {
+        // User typed a custom name or selected "Other"
+        chefName = chefInput;
+      }
     }
 
     // Edit time
@@ -363,7 +384,7 @@ export default function App() {
     // Update dinner
     await supabase.from('dinners').update({
       meal,
-      chef: chef.name,
+      chef: chefName,
       time,
       notes: notes || ''
     }).eq('id', dinner.id);
