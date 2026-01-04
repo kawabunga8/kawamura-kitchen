@@ -1,6 +1,6 @@
 // Main Application Component for Kawamura Kitchen
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp, Menu } from 'lucide-react';
+import { Calendar, ChefHat, Lightbulb, Package, Users, Home, Plus, X, ThumbsUp, Menu, Edit, MessageSquare } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -301,11 +301,14 @@ export default function App() {
 
     const time = convertTo12Hour(timeInput);
 
+    const notes = prompt('Notes (optional):') || '';
+
     await supabase.from('dinners').insert([{
       date: formatDateKey(date),
       meal,
       chef: chef.name,
-      time
+      time,
+      notes
     }]);
     // Real-time subscription will update automatically
   };
@@ -314,6 +317,57 @@ export default function App() {
     if (!confirm('Are you sure you want to delete this dinner?')) return;
 
     await supabase.from('dinners').delete().eq('id', dinnerId);
+    // Real-time subscription will update automatically
+  };
+
+  const editDinner = async (dinner) => {
+    if (familyMembers.length === 0) {
+      alert('Please add family members first!');
+      return;
+    }
+
+    // Edit meal
+    const meal = prompt('Meal name:', dinner.meal);
+    if (meal === null) return; // User cancelled
+    if (!meal) {
+      alert('Meal name cannot be empty');
+      return;
+    }
+
+    // Edit chef
+    const chefOptions = familyMembers.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+    const currentChefIndex = familyMembers.findIndex(m => m.name === dinner.chef) + 1;
+    const chefIndex = prompt(`Who is cooking?\n${chefOptions}\n\nCurrent: ${dinner.chef} (#${currentChefIndex})\nEnter number:`, currentChefIndex);
+    if (chefIndex === null) return; // User cancelled
+
+    const chef = familyMembers[parseInt(chefIndex) - 1];
+    if (!chef) {
+      alert('Invalid selection');
+      return;
+    }
+
+    // Edit time
+    const timeInput = prompt('What time? (e.g., 6:00, 7:30am)', dinner.time);
+    if (timeInput === null) return; // User cancelled
+    if (!timeInput) {
+      alert('Time cannot be empty');
+      return;
+    }
+
+    const time = convertTo12Hour(timeInput);
+
+    // Edit notes
+    const notes = prompt('Notes (optional):', dinner.notes || '');
+    if (notes === null) return; // User cancelled
+
+    // Update dinner
+    await supabase.from('dinners').update({
+      meal,
+      chef: chef.name,
+      time,
+      notes: notes || ''
+    }).eq('id', dinner.id);
+
     // Real-time subscription will update automatically
   };
 
@@ -752,6 +806,7 @@ export default function App() {
           <ScheduleView
             dinners={dinners}
             addDinner={addDinner}
+            editDinner={editDinner}
             deleteDinner={deleteDinner}
             currentWeekStart={currentWeekStart}
             setCurrentWeekStart={setCurrentWeekStart}
@@ -871,16 +926,17 @@ function DashboardView({
   );
 }
 
-// Schedule View Component  
-function ScheduleView({ 
-  dinners, 
+// Schedule View Component
+function ScheduleView({
+  dinners,
   addDinner,
+  editDinner,
   deleteDinner,
-  currentWeekStart, 
-  setCurrentWeekStart, 
-  formatWeekRange, 
-  getWeekDates, 
-  formatDateKey 
+  currentWeekStart,
+  setCurrentWeekStart,
+  formatWeekRange,
+  getWeekDates,
+  formatDateKey
 }) {
   const weekDates = getWeekDates();
 
@@ -943,16 +999,31 @@ function ScheduleView({
 
                 {dayDinners.map(dinner => (
                   <div key={dinner.id} className="bg-gradient-to-r from-red-600 to-orange-700 rounded-lg p-2 mb-2 shadow relative group">
-                    <button
-                      onClick={() => deleteDinner(dinner.id)}
-                      className="absolute top-1 right-1 p-1 text-amber-50 hover:bg-red-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete dinner"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    <div className="absolute top-1 right-1 flex gap-1">
+                      <button
+                        onClick={() => editDinner(dinner)}
+                        className="p-1 text-amber-50 hover:bg-orange-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Edit dinner"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => deleteDinner(dinner.id)}
+                        className="p-1 text-amber-50 hover:bg-red-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete dinner"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                     <div className="text-sm font-semibold text-amber-50">{dinner.meal}</div>
                     <div className="text-xs text-orange-100">{dinner.chef}</div>
                     <div className="text-xs text-amber-200 font-medium">{dinner.time}</div>
+                    {dinner.notes && (
+                      <div className="text-xs text-amber-100 mt-1 flex items-start gap-1">
+                        <MessageSquare className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                        <span className="italic">{dinner.notes}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
 
