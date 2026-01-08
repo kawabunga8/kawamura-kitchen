@@ -1,6 +1,6 @@
 // Application constants
 
-export const FAMILY_PASSWORD = 'RiverVillage';
+
 
 export const CATEGORIES = ['freezer', 'fridge', 'produce', 'pantry', 'spices'];
 

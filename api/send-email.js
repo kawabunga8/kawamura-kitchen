@@ -2,12 +2,33 @@
 // Deployed on Vercel at /api/send-email
 
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+);
+
 
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Auth Check
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+
 
   const { to, subject, html } = req.body;
 

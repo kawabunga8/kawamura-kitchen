@@ -9,20 +9,28 @@ import { RequestsView } from './components/views/RequestsView';
 import { PantryView } from './components/views/PantryView';
 import { FamilyView } from './components/views/FamilyView';
 import { FAMILY_PASSWORD } from './lib/constants';
+import { supabase } from './lib/supabase';
 
-function LoginScreen({ onLogin }) {
-  const [passwordInput, setPasswordInput] = useState('');
+function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (passwordInput === FAMILY_PASSWORD) {
-      onLogin();
-      setPasswordInput('');
-    } else {
-      toast.error('Incorrect password. Please try again.');
-      setPasswordInput('');
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message || 'Error logging in');
     }
+
+    setLoading(false);
   };
 
   return (
@@ -38,34 +46,44 @@ function LoginScreen({ onLogin }) {
           </div>
 
           <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-600 focus:ring-2 focus:ring-orange-200 transition-colors"
+                placeholder="yours@example.com"
+                required
+              />
+            </div>
+
             <div className="mb-6">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Family Password
+                Password
               </label>
               <input
                 id="password"
                 type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-600 focus:ring-2 focus:ring-orange-200 transition-colors"
                 placeholder="Enter password"
-                autoFocus
+                required
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium text-lg"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enter Kitchen
+              {loading ? 'Entering...' : 'Enter Kitchen'}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
-              Password required to prevent unauthorized access
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -130,28 +148,34 @@ function MainApp({ onLogout }) {
 }
 
 function AppContent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Check if already authenticated on mount
   useEffect(() => {
-    const savedAuth = localStorage.getItem('kawamura_kitchen_auth');
-    if (savedAuth === 'authenticated') {
-      setIsAuthenticated(true);
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    localStorage.setItem('kawamura_kitchen_auth', 'authenticated');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('kawamura_kitchen_auth');
-  };
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
+  if (!session) {
+    return <LoginScreen />;
   }
 
   return (

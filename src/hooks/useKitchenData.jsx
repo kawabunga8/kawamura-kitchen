@@ -92,9 +92,14 @@ export function KitchenDataProvider({ children }) {
   // Email helper
   const sendEmail = async (to, subject, html) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch('/api/send-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': session ? `Bearer ${session.access_token}` : ''
+        },
         body: JSON.stringify({ to, subject, html })
       });
 
