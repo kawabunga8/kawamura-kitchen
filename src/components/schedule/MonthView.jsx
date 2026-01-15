@@ -5,9 +5,13 @@ import { formatDateKey } from '../../lib/utils';
 export function MonthView({
   currentMonth,
   dinners,
+  familyMembers,
   onAddDinner,
-  onDayClick
+  onDayClick,
+  onEditDinner
 }) {
+
+
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
@@ -60,6 +64,12 @@ export function MonthView({
     return dinners.filter(d => d.date === dateKey);
   };
 
+  const getChefColor = (chefName) => {
+    const member = familyMembers.find(m => m.name === chefName);
+    return member?.color || 'orange';
+  };
+
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 shadow">
       {/* Week day headers */}
@@ -98,15 +108,26 @@ export function MonthView({
 
                   {/* Event indicators */}
                   <div className="space-y-0.5">
-                    {dayDinners.slice(0, 2).map(dinner => (
-                      <div
-                        key={dinner.id}
-                        className="text-xs truncate bg-gradient-to-r from-red-600 to-orange-600 text-white px-1 py-0.5 rounded"
-                        title={`${dinner.meal} - ${dinner.chef}`}
-                      >
-                        {dinner.meal}
-                      </div>
-                    ))}
+                    {dayDinners.slice(0, 2).map(dinner => {
+                      const color = getChefColor(dinner.chef);
+                      const bgClass = color === 'green' ? 'bg-emerald-600' : `bg-${color}-600`;
+
+                      return (
+                        <div
+                          key={dinner.id}
+                          className={`text-xs truncate text-white px-1 py-0.5 rounded ${bgClass}`}
+                          title={`${dinner.meal} - ${dinner.chef}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditDinner(dinner);
+                          }}
+                        >
+                          {dinner.meal}
+                        </div>
+                      );
+
+                    })}
+
                     {dayDinners.length > 2 && (
                       <div className="text-xs text-gray-500 px-1">
                         +{dayDinners.length - 2} more

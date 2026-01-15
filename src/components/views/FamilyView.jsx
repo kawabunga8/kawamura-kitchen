@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, Users, X, Lightbulb } from 'lucide-react';
+import { Plus, Users, X, Lightbulb, Edit } from 'lucide-react';
+
 import { useKitchenData } from '../../hooks/useKitchenData.jsx';
 import { useToast } from '../ui/ToastProvider';
 import { FamilyMemberForm } from '../forms/FamilyMemberForm';
 import { ConfirmDialog } from '../ui/Modal';
 
 export function FamilyView() {
-  const { familyMembers, addFamilyMember, deleteFamilyMember } = useKitchenData();
+  const { familyMembers, addFamilyMember, deleteFamilyMember, updateFamilyMember } = useKitchenData();
+
   const { toast } = useToast();
 
   const [showMemberForm, setShowMemberForm] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
   const [deletingMemberId, setDeletingMemberId] = useState(null);
+
 
   const handleAddMember = async (data) => {
     const { error } = await addFamilyMember(data);
@@ -20,6 +24,17 @@ export function FamilyView() {
       toast.success('Family member added!');
     }
   };
+
+  const handleEditMember = async (data) => {
+    const { error } = await updateFamilyMember(editingMember.id, data);
+    if (error) {
+      toast.error('Failed to update family member');
+    } else {
+      toast.success('Family member updated!');
+    }
+    setEditingMember(null);
+  };
+
 
   const handleDeleteMember = async () => {
     const { error } = await deleteFamilyMember(deletingMemberId);
@@ -41,7 +56,11 @@ export function FamilyView() {
           <p className="text-sm md:text-base text-gray-600">Manage household members</p>
         </div>
         <button
-          onClick={() => setShowMemberForm(true)}
+          onClick={() => {
+            setEditingMember(null);
+            setShowMemberForm(true);
+          }}
+
           className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-orange-700 text-amber-50 rounded-lg hover:from-red-700 hover:to-orange-800 transition-all shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
@@ -90,21 +109,36 @@ export function FamilyView() {
             >
               <div className="flex items-start gap-4">
                 {/* Avatar */}
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-700 flex items-center justify-center text-amber-50 font-bold text-lg shadow">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow ${member.color ? `bg-${member.color === 'green' ? 'emerald' : member.color}-600` : 'bg-gradient-to-br from-red-600 to-orange-700'
+                  }`}>
                   {member.name ? member.name[0] : '?'}
                 </div>
+
 
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
-                    <button
-                      onClick={() => setDeletingMemberId(member.id)}
-                      className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors -mt-2 -mr-2"
-                      title="Remove member"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1 -mt-2 -mr-2">
+                      <button
+                        onClick={() => {
+                          setEditingMember(member);
+                          setShowMemberForm(true);
+                        }}
+                        className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                        title="Edit member"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingMemberId(member.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove member"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
+
 
                   {member.email_notifications && (
                     <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full mb-2">
@@ -155,9 +189,14 @@ export function FamilyView() {
       {/* Add Member Form */}
       <FamilyMemberForm
         isOpen={showMemberForm}
-        onClose={() => setShowMemberForm(false)}
-        onSubmit={handleAddMember}
+        onClose={() => {
+          setShowMemberForm(false);
+          setEditingMember(null);
+        }}
+        onSubmit={editingMember ? handleEditMember : handleAddMember}
+        initialData={editingMember}
       />
+
 
       {/* Delete Confirmation */}
       <ConfirmDialog

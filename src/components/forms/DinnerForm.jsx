@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { Modal } from '../ui/Modal';
 
 export function DinnerForm({
@@ -14,6 +15,25 @@ export function DinnerForm({
   const [customChef, setCustomChef] = useState('');
   const [time, setTime] = useState(initialData?.time || '6:00');
   const [notes, setNotes] = useState(initialData?.notes || '');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setMeal(initialData.meal || '');
+        setChefId(initialData.chefId || '');
+        setCustomChef(initialData.chefId === 'custom' ? initialData.chefName : '');
+        setTime(initialData.time || '6:00');
+        setNotes(initialData.notes || '');
+      } else {
+        setMeal('');
+        setChefId('');
+        setCustomChef('');
+        setTime('6:00');
+        setNotes('');
+      }
+    }
+  }, [initialData, isOpen]);
+
 
   const handleSubmit = (e) => {
     e.preventDefault();

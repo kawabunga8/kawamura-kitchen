@@ -8,7 +8,6 @@ import { ScheduleView } from './components/views/ScheduleView';
 import { RequestsView } from './components/views/RequestsView';
 import { PantryView } from './components/views/PantryView';
 import { FamilyView } from './components/views/FamilyView';
-import { FAMILY_PASSWORD } from './lib/constants';
 import { supabase } from './lib/supabase';
 
 function LoginScreen() {

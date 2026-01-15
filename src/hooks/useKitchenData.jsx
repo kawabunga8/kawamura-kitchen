@@ -111,6 +111,25 @@ export function KitchenDataProvider({ children }) {
     }
   };
 
+  // SMS helper
+  const sendSMS = async (to, body) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': session ? `Bearer ${session.access_token}` : ''
+        },
+        body: JSON.stringify({ to, body })
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error in sendSMS:', error);
+      return { error };
+    }
+  };
+
   const notifyFamilyMembers = async (subject, message) => {
     const subscribedMembers = familyMembers.filter(m => m.email_notifications && m.email);
     if (subscribedMembers.length === 0) return;
@@ -151,6 +170,15 @@ export function KitchenDataProvider({ children }) {
       .eq('id', memberId);
     return { error };
   };
+
+  const updateFamilyMember = async (memberId, updates) => {
+    const { error } = await supabase
+      .from('family_members')
+      .update(updates)
+      .eq('id', memberId);
+    return { error };
+  };
+
 
   // Dinner operations
   const addDinner = async (date, meal, chefName, time, notes = '') => {
@@ -234,6 +262,14 @@ export function KitchenDataProvider({ children }) {
       );
     }
 
+    // Send SMS to chef
+    if (chef.phone && chef.sms_notifications !== false) {
+      await sendSMS(
+        chef.phone,
+        `You're Cooking! \nMeal: ${request.meal}\nDate: ${new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}\nTime: ${convertTo12Hour(time)}\n- Kawamura Kitchen`
+      );
+    }
+
     return { error: requestError };
   };
 
@@ -303,10 +339,22 @@ export function KitchenDataProvider({ children }) {
 
   // Pantry operations
   const addPantryItem = async (itemData) => {
-    const { data, error } = await supabase.from('pantry_items').insert([{
-      ...itemData,
-      low_stock: false
-    }]).select();
+    // Sanitize payload: remove id if it's null/undefined/empty to let DB handle auto-increment
+    const payload = { ...itemData, low_stock: false };
+    if (!payload.id) {
+      delete payload.id;
+    }
+
+    console.log('Adding pantry item payload:', payload);
+
+    const { data, error } = await supabase.from('pantry_items').insert([
+      payload
+    ]).select();
+
+    if (error) {
+      console.error('Error adding pantry item:', error);
+    }
+
     return { data, error };
   };
 
@@ -354,6 +402,83 @@ export function KitchenDataProvider({ children }) {
     return { error };
   };
 
+  const sendShoppingList = async (targetEmails) => {
+    // 1. Get low stock items
+    const lowStockItems = pantryItems.filter(item => item.low_stock);
+    if (lowStockItems.length === 0) {
+      return { error: new Error('No items are low in stock.') };
+    }
+
+    // 2. Group by category
+    const groupedItems = lowStockItems.reduce((acc, item) => {
+      const category = item.category || 'Other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(item);
+      return acc;
+    }, {});
+
+    // 3. Format HTML list
+    const categories = Object.keys(groupedItems).sort();
+
+    const itemsListHtml = categories.map(category => {
+      const categoryEmoji = CATEGORY_EMOJI[category] || '📦';
+      const items = groupedItems[category];
+
+      const itemsHtml = items.map(item =>
+        `<li style="margin-bottom: 4px; color: #374151;">${item.name} <span style="color: #6b7280; font-size: 0.9em;">(Qty: ${item.quantity})</span></li>`
+      ).join('');
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <h3 style="margin: 0 0 8px 0; color: #4b5563; font-size: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">
+            ${categoryEmoji} ${category.charAt(0).toUpperCase() + category.slice(1)}
+          </h3>
+          <ul style="list-style-type: disc; padding-left: 20px; margin: 0;">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+    }).join('');
+
+    // 4. Handle multiple recipients
+    const emails = Array.isArray(targetEmails) ? targetEmails : [targetEmails];
+
+    // 5. Send emails
+    const emailPromises = emails.map(email => sendEmail(
+      email,
+      'Your Shopping List - Kawamura Kitchen',
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+          <h2 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 10px;">Kawamura Kitchen</h2>
+          <p style="font-size: 16px;">Here is your shopping list of currently low-stock items, organized by category:</p>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+            ${itemsListHtml}
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px; font-style: italic;">
+             Tip: Add items to the pantry list and mark 'low stock' if it should be added to the shopping list.
+          </p>
+
+          <p style="color: #6b7280; font-size: 14px; margin-top: 12px; text-align: center;">
+            <a href="https://kawamura-kitchen.vercel.app" style="color: #ea580c; text-decoration: none; font-weight: bold;">Open Kawamura Kitchen App</a>
+          </p>
+
+          <p style="color: #6b7280; font-size: 14px; margin-top: 12px;">
+            Happy Shopping! 🛒
+          </p>
+        </div>
+      `
+    ));
+
+    try {
+      await Promise.all(emailPromises);
+      return { error: null };
+    } catch (e) {
+      return { error: e };
+    }
+  };
+
   const value = {
     // Data
     familyMembers,
@@ -366,6 +491,7 @@ export function KitchenDataProvider({ children }) {
     // Family operations
     addFamilyMember,
     deleteFamilyMember,
+    updateFamilyMember,
 
     // Dinner operations
     addDinner,
@@ -384,9 +510,14 @@ export function KitchenDataProvider({ children }) {
     editPantryItem,
     deletePantryItem,
     toggleLowStock,
+    sendShoppingList,
 
     // Utilities
+
+    // Utilities
+
     sendEmail,
+    sendSMS,
     notifyFamilyMembers,
     loadData
   };
