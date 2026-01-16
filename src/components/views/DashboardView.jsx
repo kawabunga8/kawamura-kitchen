@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail } from 'lucide-react';
+import { Mail, MessageSquare } from 'lucide-react';
 import { useKitchenData } from '../../hooks/useKitchenData.jsx';
 import { useToast } from '../ui/ToastProvider';
 import { formatDateKey, parseDateKey } from '../../lib/utils';
@@ -13,21 +13,27 @@ export function DashboardView({ setActiveView }) {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedRecipients, setSelectedRecipients] = useState(new Set());
 
-  const handleTestSMS = async () => {
-    // Send to current user (Shingo) or the first with a phone
-    const target = familyMembers.find(m => m.name === 'Shingo') || familyMembers.find(m => m.phone);
-    if (!target || !target.phone) {
-      toast.error('No family member with a phone number found.');
+  // SMS Modal State
+  const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
+  const [smsRecipientId, setSmsRecipientId] = useState('');
+  const [smsBody, setSmsBody] = useState('');
+
+  const handleSendSMS = async () => {
+    const recipient = familyMembers.find(m => m.id === Number(smsRecipientId));
+    if (!recipient || !recipient.phone) {
+      toast.error('Invalid recipient');
       return;
     }
 
-    toast.success(`Sending test SMS to ${target.name}...`);
-    const res = await sendSMS(target.phone, "This is a test message from Kawamura Kitchen! 🍳");
+    const res = await sendSMS(recipient.phone, smsBody);
 
     if (res.error) {
       toast.error('Failed to send SMS: ' + res.error.message);
     } else {
-      toast.success('SMS Sent!');
+      toast.success('Message sent!');
+      setIsSMSModalOpen(false);
+      setSmsBody('');
+      setSmsRecipientId('');
     }
   };
 
@@ -83,8 +89,19 @@ export function DashboardView({ setActiveView }) {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-      <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Welcome back! Here is what is happening this week</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <p className="text-sm md:text-base text-gray-600">Welcome back! Here is what is happening this week</p>
+        </div>
+        <button
+          onClick={() => setIsSMSModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg shadow hover:opacity-90 transition-opacity whitespace-nowrap"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Send Text
+        </button>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -226,6 +243,56 @@ export function DashboardView({ setActiveView }) {
           </div>
         </div>
       </Modal>
-    </div >
+
+      {/* SMS Modal */}
+      <Modal
+        isOpen={isSMSModalOpen}
+        onClose={() => setIsSMSModalOpen(false)}
+        title="Send Text Message"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+            <select
+              value={smsRecipientId}
+              onChange={(e) => setSmsRecipientId(e.target.value)}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            >
+              <option value="">Select a recipient</option>
+              {familyMembers.filter(m => m.phone).map(m => (
+                <option key={m.id} value={m.id}>{m.name} ({m.phone})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea
+              value={smsBody}
+              onChange={(e) => setSmsBody(e.target.value)}
+              rows={4}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              placeholder="Type your message here..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setIsSMSModalOpen(false)}
+              className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSendSMS}
+              disabled={!smsRecipientId || !smsBody.trim()}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Send Message
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
   );
 }
