@@ -16,6 +16,11 @@ export function formatDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+export function parseDateKey(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export function getWeekDates(weekStart) {
   const dates = [];
   for (let i = 0; i < 7; i++) {

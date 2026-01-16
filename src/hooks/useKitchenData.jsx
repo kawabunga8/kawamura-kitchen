@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 // Force deployment trigger
 import { supabase } from '../lib/supabase';
-import { formatDateKey, convertTo12Hour } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+import { formatDateKey, convertTo12Hour, parseDateKey } from '../lib/utils';
 import { CATEGORY_EMOJI } from '../lib/constants';
 
 const KitchenDataContext = createContext(null);
@@ -253,7 +254,7 @@ export function KitchenDataProvider({ children }) {
             <h2 style="color: #ea580c;">Kawamura Kitchen</h2>
             <p>Hi ${chef.name},</p>
             <p>You've been scheduled to cook <strong>${request.meal}</strong>!</p>
-            <p><strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}<br>
+            <p><strong>Date:</strong> ${parseDateKey(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}<br>
             <strong>Time:</strong> ${convertTo12Hour(time)}</p>
             <p style="color: #666; font-size: 14px;">
               You're receiving this because you have email notifications enabled in Kawamura Kitchen.
@@ -267,7 +268,7 @@ export function KitchenDataProvider({ children }) {
     if (chef.phone && chef.sms_notifications !== false) {
       await sendSMS(
         chef.phone,
-        `You're Cooking! \nMeal: ${request.meal}\nDate: ${new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}\nTime: ${convertTo12Hour(time)}\n- Kawamura Kitchen`
+        `You're Cooking! \nMeal: ${request.meal}\nDate: ${parseDateKey(date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}\nTime: ${convertTo12Hour(time)}\n- Kawamura Kitchen`
       );
     }
 

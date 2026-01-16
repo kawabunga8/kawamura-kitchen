@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { formatDateKey } from '../../lib/utils';
+import { formatDateKey, parseDateKey } from '../../lib/utils';
 
 export function DatePicker({
   value,
@@ -9,7 +9,7 @@ export function DatePicker({
   placeholder = 'Select date'
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [viewMonth, setViewMonth] = useState(value ? new Date(value) : new Date());
+  const [viewMonth, setViewMonth] = useState(value ? parseDateKey(value) : new Date());
   const containerRef = useRef(null);
 
   // Close on click outside
@@ -65,7 +65,7 @@ export function DatePicker({
   }
 
   const today = formatDateKey(new Date());
-  const selectedDate = value ? formatDateKey(new Date(value)) : null;
+  const selectedDate = value ? formatDateKey(parseDateKey(value)) : null;
   const highlightedSet = new Set(highlightedDates);
 
   const handleSelectDate = (date) => {
@@ -83,7 +83,7 @@ export function DatePicker({
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return placeholder;
-    const date = new Date(dateStr + 'T00:00:00');
+    const date = parseDateKey(dateStr);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
