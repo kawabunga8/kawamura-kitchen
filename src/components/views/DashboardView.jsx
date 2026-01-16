@@ -25,7 +25,7 @@ export function DashboardView({ setActiveView }) {
       return;
     }
 
-    const res = await sendSMS(recipient.phone, smsBody);
+    const res = await sendSMS(recipient.phone, `${smsBody} - from Kawamura-Kitchen`);
 
     if (res.error) {
       toast.error('Failed to send SMS: ' + res.error.message);
