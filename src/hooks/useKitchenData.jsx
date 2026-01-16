@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 // Force deployment trigger
 import { supabase } from '../lib/supabase';
-import { supabase } from '../lib/supabase';
 import { formatDateKey, convertTo12Hour, parseDateKey } from '../lib/utils';
 import { CATEGORY_EMOJI } from '../lib/constants';
 
