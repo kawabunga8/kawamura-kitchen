@@ -7,15 +7,23 @@
 3. Verify your email address
 4. Get your API key from the dashboard
 
-## Step 2: Add Resend API Key to Vercel
+## Step 2: Configure environment variables on Vercel
+
+This project uses Supabase Auth in serverless functions (for `/api/send-email` and `/api/send-sms`).
 
 1. Go to Vercel Dashboard → kawamura-kitchen project
-2. Click "Settings" → "Environment Variables"
-3. Add new variable:
-   - Name: `RESEND_API_KEY`
-   - Value: `re_xxxxxxxxxxxxx` (your API key from Resend)
-   - Apply to: Production, Preview, Development
-4. Click "Save"
+2. Click **Settings → Environment Variables**
+3. Add:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+
+(Back-compat: the code still accepts legacy `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, but the `SUPABASE_*` names are preferred for server-side functions.)
+
+For email delivery, the current `/api/send-email` implementation uses Gmail SMTP:
+- `GMAIL_USER`
+- `GMAIL_APP_PASSWORD`
+
+Apply variables to: Production, Preview, Development, then click Save.
 
 ## Step 3: Add Email Column to Database
 
