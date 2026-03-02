@@ -35,12 +35,18 @@ export function DinnerForm({
   }, [initialData, isOpen]);
 
 
+  const SPECIAL_CHEFS = [
+    { id: 'leftovers', name: 'Leftovers' },
+    { id: 'takeout', name: 'Takeout' },
+    { id: 'dine_out', name: 'Dine Out' },
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const chefName = chefId === 'custom'
       ? customChef
-      : familyMembers.find(m => m.id === parseInt(chefId))?.name || customChef;
+      : SPECIAL_CHEFS.find((c) => c.id === chefId)?.name || familyMembers.find(m => m.id === parseInt(chefId))?.name || customChef;
 
     if (!meal.trim()) return;
     if (!chefName.trim()) return;
@@ -109,6 +115,15 @@ export function DinnerForm({
                 {member.name}
               </option>
             ))}
+
+            <option disabled value="__divider__">──────────</option>
+            {SPECIAL_CHEFS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+
+            <option disabled value="__divider2__">──────────</option>
             <option value="custom">Other (type name)</option>
           </select>
 
