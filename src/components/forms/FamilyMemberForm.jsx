@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { Modal } from '../ui/Modal';
 
 export function FamilyMemberForm({
@@ -13,6 +14,25 @@ export function FamilyMemberForm({
   const [phone, setPhone] = useState(initialData?.phone || '');
   const [preferences, setPreferences] = useState(initialData?.preferences || '');
   const [color, setColor] = useState(initialData?.color || 'orange');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setName(initialData.name || '');
+        setEmail(initialData.email || '');
+        setPhone(initialData.phone || '');
+        setPreferences(initialData.preferences || '');
+        setColor(initialData.color || 'orange');
+      } else {
+        setName('');
+        setEmail('');
+        setPhone('');
+        setPreferences('');
+        setColor('orange');
+      }
+    }
+  }, [initialData, isOpen]);
+
 
   const COLORS = [
     { id: 'orange', label: 'Orange', bg: 'bg-orange-600', text: 'text-white' },

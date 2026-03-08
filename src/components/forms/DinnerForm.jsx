@@ -20,8 +20,23 @@ export function DinnerForm({
     if (isOpen) {
       if (initialData) {
         setMeal(initialData.meal || '');
-        setChefId(initialData.chefId || '');
-        setCustomChef(initialData.chefId === 'custom' ? initialData.chefName : '');
+        // Logic to determine initial chefId:
+        // 1. If it's a known family member ID, use it.
+        // 2. If it's a special option (Takeout/Dine Out), use the name as ID.
+        // 3. Otherwise, set to 'custom'.
+        let startChefId = initialData.chefId || '';
+
+        // If coming from edit, initialData.chefId might be the ID OR the string if previously saved as custom but matched a member?
+        // Actually ScheduleView logic handles member finding. If 'custom', it passes 'custom'.
+        // But for Takeout/Dine Out, ScheduleView passes 'custom' because it doesn't find a member.
+        // We need to override that.
+
+        if (['Takeout', 'Dine Out'].includes(initialData.chefName)) {
+          startChefId = initialData.chefName;
+        }
+
+        setChefId(startChefId);
+        setCustomChef(startChefId === 'custom' ? initialData.chefName : '');
         setTime(initialData.time || '6:00');
         setNotes(initialData.notes || '');
       } else {
@@ -38,9 +53,15 @@ export function DinnerForm({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const chefName = chefId === 'custom'
-      ? customChef
-      : familyMembers.find(m => m.id === parseInt(chefId))?.name || customChef;
+    let chefName = '';
+
+    if (chefId === 'custom') {
+      chefName = customChef;
+    } else if (['Takeout', 'Dine Out'].includes(chefId)) {
+      chefName = chefId;
+    } else {
+      chefName = familyMembers.find(m => m.id === parseInt(chefId))?.name || customChef;
+    }
 
     if (!meal.trim()) return;
     if (!chefName.trim()) return;
@@ -109,6 +130,10 @@ export function DinnerForm({
                 {member.name}
               </option>
             ))}
+            <option disabled>──────────</option>
+            <option value="Takeout">Takeout</option>
+            <option value="Dine Out">Dine Out</option>
+            <option disabled>──────────</option>
             <option value="custom">Other (type name)</option>
           </select>
 
