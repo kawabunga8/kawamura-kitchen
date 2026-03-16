@@ -9,6 +9,23 @@ const supabase = createClient(
   process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY
 );
 
+// Simple in-memory rate limiter: 10 requests per user per minute
+const rateLimitMap = new Map();
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60 * 1000;
+
+function isRateLimited(userId) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId) || { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + RATE_WINDOW_MS;
+  }
+  entry.count++;
+  rateLimitMap.set(userId, entry);
+  return entry.count > RATE_LIMIT;
+}
+
 
 
 export default async function handler(req, res) {
@@ -30,6 +47,9 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 
+  if (isRateLimited(user.id)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
 
   const { to, subject, html } = req.body;
 

@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-// Force deployment trigger
 import { supabase } from '../lib/supabase';
 import { formatDateKey, convertTo12Hour, parseDateKey } from '../lib/utils';
 import { CATEGORY_EMOJI } from '../lib/constants';
 
 const KitchenDataContext = createContext(null);
+
+const escapeHtml = (str) => String(str)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 export function KitchenDataProvider({ children }) {
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -157,10 +163,7 @@ export function KitchenDataProvider({ children }) {
 
   // Family member operations
   const addFamilyMember = async (memberData) => {
-    const { error } = await supabase.from('family_members').insert([{
-      ...memberData,
-      email_notifications: true
-    }]);
+    const { error } = await supabase.from('family_members').insert([memberData]);
     return { error };
   };
 
@@ -304,9 +307,8 @@ export function KitchenDataProvider({ children }) {
 
     if (voteError) return { error: voteError };
 
-    // Update vote count
-    const currentVotes = votes.filter(v => v.request_id === requestId).length + 1;
-    const { error } = await supabase.from('requests').update({ votes: currentVotes }).eq('id', requestId);
+    // Atomically increment vote count in the DB
+    const { error } = await supabase.rpc('increment_request_votes', { p_request_id: requestId });
     return { error };
   };
 
@@ -326,7 +328,7 @@ export function KitchenDataProvider({ children }) {
           <p>Hi ${creator.name},</p>
           <p><strong>${senderName}</strong> sent you a message about your meal request "<strong>${request.meal}</strong>":</p>
           <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-            <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+            <p style="margin: 0; white-space: pre-wrap;">${escapeHtml(message)}</p>
           </div>
           <p style="color: #666; font-size: 14px;">
             You're receiving this because you have email notifications enabled in Kawamura Kitchen.
@@ -376,18 +378,18 @@ export function KitchenDataProvider({ children }) {
     const newLowStockStatus = !item.low_stock;
     const { error } = await supabase.from('pantry_items').update({ low_stock: newLowStockStatus }).eq('id', itemId);
 
-    // Send email to Shingo if item became low stock
+    // Send low stock alert to all members with email notifications enabled
     if (!error && newLowStockStatus) {
-      const shingo = familyMembers.find(m => m.name === 'Shingo');
-      if (shingo && shingo.email && shingo.email_notifications) {
-        const emoji = CATEGORY_EMOJI[item.category || 'pantry'] || '📦';
-        await sendEmail(
-          shingo.email,
+      const emoji = CATEGORY_EMOJI[item.category || 'pantry'] || '📦';
+      const recipients = familyMembers.filter(m => m.email_notifications && m.email);
+      await Promise.all(recipients.map(member =>
+        sendEmail(
+          member.email,
           `Low Stock Alert: ${item.name}`,
           `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #ea580c;">Kawamura Kitchen</h2>
-              <p>Hi ${shingo.name},</p>
+              <p>Hi ${member.name},</p>
               <p>${emoji} <strong>${item.name}</strong> is running low!</p>
               <p><strong>Current quantity:</strong> ${item.quantity}</p>
               <p>Please add it to your shopping list.</p>
@@ -396,8 +398,8 @@ export function KitchenDataProvider({ children }) {
               </p>
             </div>
           `
-        );
-      }
+        )
+      ));
     }
 
     return { error };
@@ -514,9 +516,6 @@ export function KitchenDataProvider({ children }) {
     sendShoppingList,
 
     // Utilities
-
-    // Utilities
-
     sendEmail,
     sendSMS,
     notifyFamilyMembers,
