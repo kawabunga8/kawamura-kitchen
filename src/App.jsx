@@ -8,6 +8,7 @@ import { ScheduleView } from './components/views/ScheduleView';
 import { RequestsView } from './components/views/RequestsView';
 import { PantryView } from './components/views/PantryView';
 import { FamilyView } from './components/views/FamilyView';
+import { RecipesView } from './components/views/RecipesView';
 import { supabase } from './lib/supabase';
 
 function LoginScreen() {
@@ -136,11 +137,14 @@ function MainApp({ onLogout }) {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto pt-16 md:pt-0">
-        {activeView === 'dashboard' && <DashboardView setActiveView={setActiveView} />}
-        {activeView === 'schedule' && <ScheduleView />}
-        {activeView === 'requests' && <RequestsView />}
-        {activeView === 'pantry' && <PantryView />}
-        {activeView === 'family' && <FamilyView />}
+        <div key={activeView} className="page-zoom-in h-full">
+          {activeView === 'dashboard' && <DashboardView setActiveView={setActiveView} />}
+          {activeView === 'schedule' && <ScheduleView />}
+          {activeView === 'requests' && <RequestsView />}
+          {activeView === 'pantry' && <PantryView />}
+          {activeView === 'family' && <FamilyView />}
+          {activeView === 'recipes' && <RecipesView />}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Lightbulb, Package, Users, Home } from 'lucide-react';
+import { Calendar, Lightbulb, Package, Users, Home, BookOpen } from 'lucide-react';
 
 export function Sidebar({
   activeView,
@@ -13,7 +13,8 @@ export function Sidebar({
     { id: 'schedule', label: 'Schedule', icon: Calendar },
     { id: 'requests', label: 'Requests', icon: Lightbulb },
     { id: 'pantry', label: 'Pantry', icon: Package },
-    { id: 'family', label: 'Family', icon: Users }
+    { id: 'family', label: 'Family', icon: Users },
+    { id: 'recipes', label: 'Recipes', icon: BookOpen }
   ];
 
   const handleNavClick = (viewId) => {
