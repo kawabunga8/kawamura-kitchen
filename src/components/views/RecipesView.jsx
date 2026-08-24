@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Timer, Plus, Minus, ChefHat, Clock, Users } from 'lucide-react';
 
 const DAHL = {
-  name: 'Red Lentil Dahl',
+  name: 'Quick & Easy Red Lentil Dahl',
   emoji: '🍲',
-  description: 'A warming, hearty dahl with coconut milk and baby spinach. Serve over brown or white rice.',
+  description: 'Made in one pot in just 30 minutes — rich, creamy, and packed with plant protein and fiber. By Nora Taylor.',
   defaultServings: 8,
   prepTime: '10 min',
-  cookTime: '30 min',
+  cookTime: '20 min',
+  calories: '258 kcal',
   ingredients: [
     { amount: 1,    unit: 'tbsp',   name: 'olive oil' },
     { amount: 1,    unit: 'large',  name: 'yellow onion, chopped small' },
@@ -22,26 +23,33 @@ const DAHL = {
     { amount: 3,    unit: 'cups',   name: 'vegetable broth' },
     { amount: 1,    unit: 'tsp',    name: 'salt, or to taste' },
     { amount: 0.5,  unit: '',       name: 'lemon, juiced' },
-    { amount: 3.5,  unit: 'cups',   name: 'baby spinach' },
-    { amount: 4,    unit: 'cups',   name: 'cooked brown or white rice (for serving)' },
+    { amount: 3.5,  unit: 'cups',   name: 'baby spinach (3–4 cups)' },
+  ],
+  serving: [
+    { amount: 4, unit: 'cups', name: 'cooked brown or white rice' },
+    { name: 'Vegan Naan' },
   ],
   steps: [
     {
-      text: 'Heat olive oil in a large pot over medium heat. Add onion and cook, stirring occasionally, until softened and translucent.',
+      text: 'In a large pot or pan over medium heat, sauté the chopped onion in the olive oil, stirring frequently. Then add the garlic and ginger and cook 1 more minute until fragrant.',
       timerSeconds: 5 * 60,
-      timerLabel: '5 min — soften the onion',
+      timerLabel: '5 min — sauté the onion',
     },
     {
-      text: 'Add garlic, ginger, garam masala, turmeric, and chili flakes. Stir and cook for about 1 minute until very fragrant.',
+      text: 'Add the garam masala, turmeric, and red pepper flakes to the pan and stir into the mixture. Add a few tablespoons of water if the mixture is too dry.',
       timerSeconds: null,
     },
     {
-      text: 'Add lentils, diced tomatoes, coconut milk, and vegetable broth. Stir to combine. Bring to a boil, then reduce heat, cover partially, and simmer — stirring occasionally — until lentils are completely soft and the dahl has thickened.',
-      timerSeconds: 25 * 60,
-      timerLabel: '25 min — simmer until lentils are tender',
+      text: 'Add the dried lentils, canned tomatoes and their juices, coconut milk, and broth. Stir well and turn the heat to high. Bring to a boil, then lower the heat and simmer, stirring occasionally, until the lentils are cooked and soft.',
+      timerSeconds: 15 * 60,
+      timerLabel: '15 min — simmer until lentils are soft',
     },
     {
-      text: 'Stir in baby spinach and cook until just wilted, about 1 minute. Season with salt and lemon juice. Serve over cooked rice.',
+      text: 'Squeeze the lemon juice into the pan and stir in the spinach until wilted. Season with salt to taste.',
+      timerSeconds: null,
+    },
+    {
+      text: 'Serve with brown or white rice and Vegan Naan. Enjoy!',
       timerSeconds: null,
     },
   ],
@@ -155,7 +163,7 @@ export function RecipesView() {
           </div>
           <ChefHat className="w-10 h-10 text-orange-200 shrink-0 mt-1" />
         </div>
-        <div className="flex gap-4 mt-4 text-sm text-orange-100">
+        <div className="flex flex-wrap gap-4 mt-4 text-sm text-orange-100">
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
             <span>Prep {DAHL.prepTime}</span>
@@ -163,6 +171,10 @@ export function RecipesView() {
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
             <span>Cook {DAHL.cookTime}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>·</span>
+            <span>{DAHL.calories} / serving</span>
           </div>
         </div>
       </div>
@@ -204,6 +216,31 @@ export function RecipesView() {
             </li>
           ))}
         </ul>
+        <div className="mt-4 pt-4 border-t border-stone-100">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">For serving</p>
+          <ul className="space-y-1">
+            {DAHL.serving.map((s, i) => (
+              <li key={i} className="text-sm text-gray-700 flex items-baseline gap-2">
+                {s.amount != null ? (
+                  <>
+                    <span className="font-semibold text-orange-700 min-w-[3.5rem] text-right">
+                      {fmtAmount(s.amount, servings, DAHL.defaultServings)} {s.unit}
+                    </span>
+                    <span>{s.name}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="min-w-[3.5rem]" />
+                    <span className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                      {s.name}
+                    </span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* Steps */}
