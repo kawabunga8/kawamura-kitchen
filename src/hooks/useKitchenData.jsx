@@ -93,13 +93,10 @@ export function KitchenDataProvider({ children }) {
   // Email helper
   const sendEmail = async (to, subject, html) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
       const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': session ? `Bearer ${session.access_token}` : ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ to, subject, html })
       });
@@ -109,25 +106,6 @@ export function KitchenDataProvider({ children }) {
       }
     } catch (error) {
       console.error('Error sending email:', error);
-    }
-  };
-
-  // SMS helper
-  const sendSMS = async (to, body) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/api/send-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': session ? `Bearer ${session.access_token}` : ''
-        },
-        body: JSON.stringify({ to, body })
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error in sendSMS:', error);
-      return { error };
     }
   };
 
@@ -260,14 +238,6 @@ export function KitchenDataProvider({ children }) {
             </p>
           </div>
         `
-      );
-    }
-
-    // Send SMS to chef
-    if (chef.phone && chef.sms_notifications !== false) {
-      await sendSMS(
-        chef.phone,
-        `You're Cooking! \nMeal: ${request.meal}\nDate: ${parseDateKey(date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}\nTime: ${convertTo12Hour(time)}\n- Kawamura Kitchen`
       );
     }
 
@@ -518,7 +488,6 @@ export function KitchenDataProvider({ children }) {
     // Utilities
 
     sendEmail,
-    sendSMS,
     notifyFamilyMembers,
     loadData
   };

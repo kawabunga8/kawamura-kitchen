@@ -10,7 +10,6 @@ export function FamilyMemberForm({
 
   const [name, setName] = useState(initialData?.name || '');
   const [email, setEmail] = useState(initialData?.email || '');
-  const [phone, setPhone] = useState(initialData?.phone || '');
   const [preferences, setPreferences] = useState(initialData?.preferences || '');
   const [color, setColor] = useState(initialData?.color || 'orange');
 
@@ -32,7 +31,6 @@ export function FamilyMemberForm({
     onSubmit({
       name: name.trim(),
       email: email.trim(),
-      phone: phone.trim(),
 
       preferences: preferences.trim(),
       color
@@ -42,7 +40,6 @@ export function FamilyMemberForm({
     // Reset form
     setName('');
     setEmail('');
-    setPhone('');
     setPreferences('');
     setColor('orange');
     onClose();
@@ -51,7 +48,6 @@ export function FamilyMemberForm({
   const handleClose = () => {
     setName(initialData?.name || '');
     setEmail(initialData?.email || '');
-    setPhone(initialData?.phone || '');
     setPreferences(initialData?.preferences || '');
     setColor(initialData?.color || 'orange');
     onClose();
@@ -93,19 +89,6 @@ export function FamilyMemberForm({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             placeholder="email@example.com"
             required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Phone (optional)
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="(555) 123-4567"
           />
         </div>
 

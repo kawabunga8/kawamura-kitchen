@@ -23,25 +23,29 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Auth Check
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-  if (authError || !user) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-
-
   const { to, subject, html } = req.body;
 
   // Validate inputs
   if (!to || !subject || !html) {
     return res.status(400).json({ error: 'Missing required fields: to, subject, and html' });
+  }
+
+  // The app is open to anyone with the URL, so this endpoint is too. Rather than
+  // let it relay mail to arbitrary addresses, only deliver to people who are
+  // already listed in family_members.
+  const { data: recipient, error: recipientError } = await supabase
+    .from('family_members')
+    .select('id')
+    .ilike('email', to)
+    .maybeSingle();
+
+  if (recipientError) {
+    console.error('Recipient lookup failed:', recipientError);
+    return res.status(500).json({ error: 'Could not verify recipient' });
+  }
+
+  if (!recipient) {
+    return res.status(403).json({ error: 'Recipient is not a family member' });
   }
 
   const GMAIL_USER = process.env.GMAIL_USER;

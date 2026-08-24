@@ -84,13 +84,6 @@ export function FamilyView() {
           </div>
           <div className="text-sm text-emerald-100">Email Alerts</div>
         </div>
-
-        <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold text-amber-50">0</span>
-          </div>
-          <div className="text-sm text-orange-100">SMS Alerts</div>
-        </div>
       </div>
 
       {/* Family Members List */}
@@ -151,12 +144,6 @@ export function FamilyView() {
                       <span>📧</span>
                       <span>{member.email}</span>
                     </div>
-                    {member.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span>📱</span>
-                        <span>{member.phone}</span>
-                      </div>
-                    )}
                     {member.preferences && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-500 mb-1">PREFERENCES</p>
@@ -179,7 +166,6 @@ export function FamilyView() {
             <h4 className="font-semibold text-blue-900 mb-2">About Notifications</h4>
             <ul className="space-y-1 text-sm text-blue-800">
               <li>Email notifications work right away - send dinner updates directly from the dashboard</li>
-              <li>SMS notifications require backend functions</li>
               <li>Family members will receive updates about who is cooking and when dinner is ready</li>
             </ul>
           </div>

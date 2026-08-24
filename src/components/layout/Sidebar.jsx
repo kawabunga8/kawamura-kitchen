@@ -4,7 +4,6 @@ import { Calendar, Lightbulb, Package, Users, Home, BookOpen } from 'lucide-reac
 export function Sidebar({
   activeView,
   setActiveView,
-  onLogout,
   isMobileMenuOpen,
   setIsMobileMenuOpen
 }) {
@@ -69,13 +68,6 @@ export function Sidebar({
           <p className="text-xs font-semibold text-amber-100 mb-1">Live Sync</p>
           <p className="text-xs text-emerald-200">Everyone sees updates in real-time!</p>
         </div>
-
-        <button
-          onClick={onLogout}
-          className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-amber-50 rounded-lg transition-colors text-sm font-medium"
-        >
-          Logout
-        </button>
       </div>
     </div>
   );
