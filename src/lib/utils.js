@@ -4,7 +4,7 @@ export function getWeekStart(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   const day = d.getDay();
-  const diff = -day; // Days to subtract to get to Sunday
+  const diff = day === 0 ? -6 : 1 - day; // Days to adjust to get to Monday
   d.setDate(d.getDate() + diff);
   return d;
 }

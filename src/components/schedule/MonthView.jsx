@@ -19,7 +19,7 @@ export function MonthView({
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+  const startDayOfWeek = (firstDay.getDay() + 6) % 7; // 0 = Monday
 
   // Get days from previous month to fill first week
   const prevMonthLastDay = new Date(year, month, 0).getDate();
@@ -57,7 +57,7 @@ export function MonthView({
   }
 
   const today = formatDateKey(new Date());
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const getDinnersForDate = (date) => {
     const dateKey = formatDateKey(date);
