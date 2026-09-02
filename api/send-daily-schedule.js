@@ -4,10 +4,16 @@ export default async function handler(req, res) {
     const nodemailer = await import('nodemailer').then(m => m.default);
     const { createClient } = await import('@supabase/supabase-js');
 
-    const supabase = createClient(
-      process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_KEY
-    );
+    const SUPABASE_URL =
+      process.env.SUPABASE_URL ||
+      process.env.VITE_SUPABASE_URL;
+
+    const SUPABASE_ANON_KEY =
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_KEY;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
