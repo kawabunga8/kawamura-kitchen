@@ -9,10 +9,9 @@ Short, actionable guidance to help AI agents be productive in this repository.
 
 ## Important files & patterns
 - `src/hooks/useKitchenData.jsx`: central single-source-of-truth for CRUD operations. Functions return `{ error }` or `{ data, error }` and often trigger emails via `fetch('/api/send-email')`.
-- `src/lib/constants.js`: single place for app constants (e.g. `FAMILY_PASSWORD`, category maps, emojis).
+- `src/lib/constants.js`: single place for app constants (category maps, emojis, etc.).
 - `src/lib/utils.js`: date/time helpers (use these when manipulating dinner dates/times).
 - Views/components: UI is organized under `src/components/` (layout, views, forms, ui). Follow existing component patterns when adding new screens.
-- Client uses localStorage key `kawamura_kitchen_auth` to persist authentication state in `App.jsx`.
 
 ## Environment & run commands
 - Local dev: `npm run dev` (Vite). Build: `npm run build`. Preview: `npm run preview`.
@@ -36,7 +35,6 @@ Short, actionable guidance to help AI agents be productive in this repository.
 - When adding UI, follow existing folder structure and export patterns (e.g. `components/views/RequestsView.jsx` style).
 
 ## Safety notes for contributors
-- `FAMILY_PASSWORD` is hard-coded in `src/lib/constants.js`; changing it will affect local sign-in flow used by `App.jsx`.
 - Email credentials live in environment variables; do not commit secrets.
 
 If anything here is unclear or you want more detail (test commands, CI, or templates for new components), tell me which section to expand.

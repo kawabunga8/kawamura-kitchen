@@ -1,15 +1,14 @@
 # Email Notification Setup Guide
 
-## Step 1: Create Resend Account
+## Step 1: Create a Gmail App Password
 
-1. Go to https://resend.com/signup
-2. Sign up with your email
-3. Verify your email address
-4. Get your API key from the dashboard
+1. Go to your Google Account → Security → 2-Step Verification → App passwords
+2. Generate an app password for "Mail"
+3. Keep it handy for the next step
 
 ## Step 2: Configure environment variables on Vercel
 
-This project uses Supabase Auth in serverless functions (for `/api/send-email` and `/api/send-sms`).
+This project uses Supabase in serverless functions (for `/api/send-email` and `/api/send-daily-schedule`).
 
 1. Go to Vercel Dashboard → kawamura-kitchen project
 2. Click **Settings → Environment Variables**
@@ -21,7 +20,7 @@ This project uses Supabase Auth in serverless functions (for `/api/send-email` a
 
 For email delivery, the current `/api/send-email` implementation uses Gmail SMTP:
 - `GMAIL_USER`
-- `GMAIL_APP_PASSWORD`
+- `GMAIL_APP_PASSWORD` (the app password from Step 1)
 
 Apply variables to: Production, Preview, Development, then click Save.
 
@@ -52,9 +51,6 @@ Emails will be sent when:
 - ✅ Meal request is scheduled
 - ✅ Pantry item becomes low stock
 
-## Free Tier Limits
+## Gmail Sending Limits
 
-Resend free tier:
-- 3,000 emails/month
-- 100 emails/day
-- Perfect for family use!
+A standard Gmail account can send roughly 500 emails/day via SMTP — plenty for family use.
